@@ -37,7 +37,7 @@
 - `obstest`：无 provider SDK 的 counters/log recorder。
 - `leaktest`：轻量 goroutine leak 快照与校验。
 - `boundarytest`：扫描生产 Go 文件中的非法测试库 import。
-- `manifesttest`：构造、写入、读取 release manifest fixture，并生成和断言 `.sha256` sidecar。
+- `manifesttest`：构造、写入和读取 release manifest fixture。
 - `repotest`：仓库 fixture 文件写入辅助。
 
 仓库仍保留 `Config`、`Client`、`HealthCheck`、metrics、contracts、release manifest 和模板文档等历史模板资产；它们用于兼容当前 gate 和回归基线。新的文档身份以 L1 测试专用能力库为准。
@@ -81,7 +81,6 @@
 GOWORK=off go test ./...
 GOWORK=off go vet ./...
 GOWORK=off make golden
-GOWORK=off make manifest-fixture-check
 GOWORK=off make ci
 GOWORK=off make release-check
 ```
@@ -121,7 +120,6 @@ func TestConfigFixture(t *testing.T) {
 - `GOWORK=off go test ./...` 覆盖 helper、contracts、examples 和历史模板基线。
 - `GOWORK=off go vet ./...` 覆盖 Go 静态检查。
 - `GOWORK=off make golden` 锁定稳定输出且不默认更新 golden。
-- `release/manifest/latest.json` 与 `release/manifest/latest.json.sha256` 共同构成可重放校验的 release Evidence。
 - Contract、harness、golden、manifest helper 通过结构化 Evidence 类型承载审计字段。
 - Full 口径仍需要外部 CI artifact URL、下游真实仓库采用证明和发布 tag/manifest artifact；这些不是本地文档变更能单独证明的事实。
 

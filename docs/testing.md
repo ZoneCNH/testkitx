@@ -21,7 +21,7 @@
 - `fixture`：隔离 temp root、HOME、module 目录和 `GOWORK=off` 环境。
 - `harness`：命令执行与 stdout/stderr/env digest Evidence。
 - `clocktest`、`obstest`、`leaktest`：确定性时间、可观测性 recorder 和 goroutine leak 检查。
-- `boundarytest`、`manifesttest`、`repotest`：生产 import 边界、manifest fixture、manifest checksum sidecar 和仓库 fixture。
+- `boundarytest`、`manifesttest`、`repotest`：生产 import 边界、manifest fixture 和仓库 fixture。
 
 采用与当前状态说明见 [当前状态与采用说明](current-state-adoption.zh-CN.md)。
 
