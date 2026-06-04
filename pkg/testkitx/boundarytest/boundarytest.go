@@ -15,6 +15,7 @@ type Violation struct {
 }
 
 func ScanProductionImports(root, forbiddenPrefix string) ([]Violation, error) {
+	forbiddenPrefix = strings.TrimSuffix(forbiddenPrefix, "/")
 	var out []Violation
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
