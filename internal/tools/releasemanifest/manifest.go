@@ -5,30 +5,34 @@ import (
 	"time"
 )
 
-var checkNames = []string{
-	"fmt",
-	"vet",
-	"lint",
-	"unit_test",
-	"race_test",
-	"boundary",
-	"secret_scan",
-	"security",
-	"contract",
-	"integration",
+func checkNames() []string {
+	return []string{
+		"fmt",
+		"vet",
+		"lint",
+		"unit_test",
+		"race_test",
+		"boundary",
+		"secret_scan",
+		"security",
+		"contract",
+		"integration",
+	}
 }
 
-var checkEnvNames = map[string]string{
-	"fmt":         "FMT_STATUS",
-	"vet":         "VET_STATUS",
-	"lint":        "LINT_STATUS",
-	"unit_test":   "UNIT_TEST_STATUS",
-	"race_test":   "RACE_TEST_STATUS",
-	"boundary":    "BOUNDARY_STATUS",
-	"secret_scan": "SECRET_SCAN_STATUS",
-	"security":    "SECURITY_STATUS",
-	"contract":    "CONTRACT_STATUS",
-	"integration": "INTEGRATION_STATUS",
+func checkEnvNames() map[string]string {
+	return map[string]string{
+		"fmt":         "FMT_STATUS",
+		"vet":         "VET_STATUS",
+		"lint":        "LINT_STATUS",
+		"unit_test":   "UNIT_TEST_STATUS",
+		"race_test":   "RACE_TEST_STATUS",
+		"boundary":    "BOUNDARY_STATUS",
+		"secret_scan": "SECRET_SCAN_STATUS",
+		"security":    "SECURITY_STATUS",
+		"contract":    "CONTRACT_STATUS",
+		"integration": "INTEGRATION_STATUS",
+	}
 }
 
 type Manifest struct {
@@ -123,9 +127,9 @@ func buildManifest() (Manifest, error) {
 
 func buildChecks() map[string]string {
 	defaultStatus := envDefault("CHECK_STATUS", "unknown")
-	checks := make(map[string]string, len(checkNames))
-	for _, name := range checkNames {
-		checks[name] = envDefault(checkEnvNames[name], defaultStatus)
+	checks := make(map[string]string, len(checkNames()))
+	for _, name := range checkNames() {
+		checks[name] = envDefault(checkEnvNames()[name], defaultStatus)
 	}
 	return checks
 }

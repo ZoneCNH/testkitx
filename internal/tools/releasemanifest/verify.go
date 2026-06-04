@@ -93,7 +93,7 @@ func verifyManifest(path string, requirePassed bool, requireClean bool, expectVe
 
 func validateChecks(checks map[string]string, requirePassed bool) []string {
 	var failures []string
-	for _, name := range checkNames {
+	for _, name := range checkNames() {
 		status := strings.TrimSpace(checks[name])
 		if status == "" {
 			failures = append(failures, "checks."+name+" is required")

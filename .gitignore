@@ -36,6 +36,7 @@ release/manifest/latest.json.sha256
 .worktree/
 .omc/
 .omx/
+.claude/
 
 # Editor/IDE
 # .idea/

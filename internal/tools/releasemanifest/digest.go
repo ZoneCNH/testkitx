@@ -12,11 +12,13 @@ import (
 	"strings"
 )
 
-var contractFiles = []string{
-	"contracts/config.schema.json",
-	"contracts/error.schema.json",
-	"contracts/health.schema.json",
-	"contracts/metrics.md",
+func contractFiles() []string {
+	return []string{
+		"contracts/config.schema.json",
+		"contracts/error.schema.json",
+		"contracts/health.schema.json",
+		"contracts/metrics.md",
+	}
 }
 
 func sourceDigest() (string, int, error) {
@@ -50,8 +52,8 @@ func sourceDigest() (string, int, error) {
 }
 
 func contractDigests() ([]FileDigest, error) {
-	digests := make([]FileDigest, 0, len(contractFiles))
-	for _, path := range contractFiles {
+	digests := make([]FileDigest, 0, len(contractFiles()))
+	for _, path := range contractFiles() {
 		digest, err := fileDigest(path)
 		if err != nil {
 			return nil, err

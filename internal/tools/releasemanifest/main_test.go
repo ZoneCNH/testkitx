@@ -9,62 +9,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
 	"testing"
-	"time"
+
+	"github.com/ZoneCNH/testkitx/internal/cliutil"
 )
-
-func TestBuildChecksUsesGlobalAndSpecificStatus(t *testing.T) {
-	t.Setenv("CHECK_STATUS", "passed")
-	t.Setenv("LINT_STATUS", "failed")
-
-	checks := buildChecks()
-
-	if checks["fmt"] != "passed" {
-		t.Fatalf("fmt status = %q, want passed", checks["fmt"])
-	}
-	if checks["lint"] != "failed" {
-		t.Fatalf("lint status = %q, want failed", checks["lint"])
-	}
-}
-
-func TestValidateChecksRequiresPassedStatuses(t *testing.T) {
-	checks := make(map[string]string, len(checkNames))
-	for _, name := range checkNames {
-		checks[name] = "passed"
-	}
-	checks["security"] = "unknown"
-
-	failures := validateChecks(checks, true)
-
-	if len(failures) != 1 {
-		t.Fatalf("len(failures) = %d, want 1: %v", len(failures), failures)
-	}
-	if !strings.Contains(failures[0], "checks.security") {
-		t.Fatalf("failure = %q, want security check failure", failures[0])
-	}
-}
-
-func TestFileDigestRecordsPathAndSHA256(t *testing.T) {
-	path := t.TempDir() + "/contract.json"
-	if err := os.WriteFile(path, []byte("abc"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	digest, err := fileDigest(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if digest.Path != path {
-		t.Fatalf("path = %q, want %q", digest.Path, path)
-	}
-	const want = "sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
-	if digest.SHA256 != want {
-		t.Fatalf("sha256 = %q, want %q", digest.SHA256, want)
-	}
-}
 
 func TestRunCLIGeneratesManifestToOut(t *testing.T) {
 	t.Setenv("GOWORK", "off")
@@ -110,7 +59,7 @@ func TestRunCLIGeneratesManifestToOut(t *testing.T) {
 	if manifest.GeneratedBy != "releasemanifest-cli-test" {
 		t.Fatalf("generated_by = %q, want releasemanifest-cli-test", manifest.GeneratedBy)
 	}
-	for _, name := range checkNames {
+	for _, name := range checkNames() {
 		if manifest.Checks[name] != "passed" {
 			t.Fatalf("checks[%q] = %q, want passed", name, manifest.Checks[name])
 		}
@@ -376,263 +325,15 @@ func TestRunCLIRejectsUnknownFlag(t *testing.T) {
 }
 
 func TestPrintCLIMessageReportsWriterFailure(t *testing.T) {
-	if code := printCLIStatus(errorWriter{}, "ok\n"); code != 1 {
+	if code := cliutil.PrintCLIStatus(errorWriter{}, "ok\n"); code != 1 {
 		t.Fatalf("printCLIStatus exit code = %d, want 1", code)
 	}
-	if code := printCLIError(errorWriter{}, errors.New("boom")); code != 1 {
+	if code := cliutil.PrintCLIError(errorWriter{}, errors.New("boom")); code != 1 {
 		t.Fatalf("printCLIError exit code = %d, want 1", code)
 	}
 }
 
-func TestBuildManifestRecordsCurrentRepositoryFacts(t *testing.T) {
-	t.Setenv("GOWORK", "off")
-	t.Setenv("VERSION", "v9.9.9-test")
-	t.Setenv("GENERATED_BY", "releasemanifest-test")
-	t.Setenv("CHECK_STATUS", "passed")
-	chdir(t, repoRoot(t))
-
-	manifest, err := buildManifest()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if manifest.Module != "github.com/ZoneCNH/testkitx" {
-		t.Fatalf("module = %q, want github.com/ZoneCNH/testkitx", manifest.Module)
-	}
-	if manifest.Version != "v9.9.9-test" {
-		t.Fatalf("version = %q, want v9.9.9-test", manifest.Version)
-	}
-	if manifest.GeneratedBy != "releasemanifest-test" {
-		t.Fatalf("generated_by = %q, want releasemanifest-test", manifest.GeneratedBy)
-	}
-	if _, err := time.Parse(time.RFC3339, manifest.GeneratedAt); err != nil {
-		t.Fatalf("generated_at = %q, want RFC3339: %v", manifest.GeneratedAt, err)
-	}
-	if !strings.HasPrefix(manifest.SourceDigest, "sha256:") {
-		t.Fatalf("source_digest = %q, want sha256 prefix", manifest.SourceDigest)
-	}
-	if manifest.TrackedFileCount == 0 {
-		t.Fatal("tracked_file_count = 0, want tracked files")
-	}
-	if len(manifest.Contracts) != len(contractFiles) {
-		t.Fatalf("len(contracts) = %d, want %d", len(manifest.Contracts), len(contractFiles))
-	}
-	if len(manifest.Dependencies) == 0 || manifest.Dependencies[0].Path != manifest.Module || !manifest.Dependencies[0].Main {
-		t.Fatalf("dependencies[0] = %+v, want main module %q", manifest.Dependencies, manifest.Module)
-	}
-	if manifest.Tools["go"] == "" {
-		t.Fatal("tools.go is empty")
-	}
-	if !contains(manifest.Artifacts, "release/manifest/latest.json") {
-		t.Fatalf("artifacts = %v, want release/manifest/latest.json", manifest.Artifacts)
-	}
-	if !contains(manifest.Artifacts, "release/manifest/latest.json.sha256") {
-		t.Fatalf("artifacts = %v, want release/manifest/latest.json.sha256", manifest.Artifacts)
-	}
-	for _, name := range checkNames {
-		if manifest.Checks[name] != "passed" {
-			t.Fatalf("checks[%q] = %q, want passed", name, manifest.Checks[name])
-		}
-	}
-	if manifest.TreeState != "clean" && manifest.TreeState != "dirty" {
-		t.Fatalf("tree_state = %q, want clean or dirty", manifest.TreeState)
-	}
-}
-
-func TestVerifyManifestAcceptsFreshManifestAndRejectsDrift(t *testing.T) {
-	t.Setenv("GOWORK", "off")
-	t.Setenv("CHECK_STATUS", "passed")
-	chdir(t, repoRoot(t))
-
-	manifest, err := buildManifest()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	goodPath := filepath.Join(t.TempDir(), "latest.json")
-	if err := writeManifest(goodPath, manifest); err != nil {
-		t.Fatal(err)
-	}
-	if err := verifyManifest(goodPath, true, false, ""); err != nil {
-		t.Fatalf("verify fresh manifest: %v", err)
-	}
-
-	manifest.SourceDigest = "sha256:bad"
-	manifest.Checks["lint"] = "unknown"
-	badPath := filepath.Join(t.TempDir(), "stale.json")
-	if err := writeManifest(badPath, manifest); err != nil {
-		t.Fatal(err)
-	}
-
-	err = verifyManifest(badPath, true, false, "")
-	if err == nil {
-		t.Fatal("verify stale manifest succeeded, want error")
-	}
-	message := err.Error()
-	for _, want := range []string{
-		"source_digest does not match current tracked file contents",
-		`checks.lint must be passed, got "unknown"`,
-	} {
-		if !strings.Contains(message, want) {
-			t.Fatalf("error = %q, want substring %q", message, want)
-		}
-	}
-}
-
-func TestVerifyManifestRequiresCleanTree(t *testing.T) {
-	t.Setenv("GOWORK", "off")
-	t.Setenv("CHECK_STATUS", "passed")
-	chdir(t, repoRoot(t))
-
-	manifest, err := buildManifest()
-	if err != nil {
-		t.Fatal(err)
-	}
-	manifest.TreeState = "dirty"
-
-	path := filepath.Join(t.TempDir(), "dirty.json")
-	if err := writeManifest(path, manifest); err != nil {
-		t.Fatal(err)
-	}
-
-	err = verifyManifest(path, true, true, "")
-	if err == nil {
-		t.Fatal("verify dirty manifest with requireClean succeeded, want error")
-	}
-	if !strings.Contains(err.Error(), `tree_state must be clean, got "dirty"`) {
-		t.Fatalf("error = %q, want require-clean failure", err)
-	}
-}
-
-func TestSourceDigestUsesTrackedFileNamesAndContents(t *testing.T) {
-	repo := t.TempDir()
-	runTestCommand(t, repo, "git", "init")
-
-	files := map[string]string{
-		"a.txt":          "alpha\n",
-		"nested/b.txt":   "bravo\n",
-		"nested/cfg.yml": "name: charlie\n",
-	}
-	for path, content := range files {
-		fullPath := filepath.Join(repo, filepath.FromSlash(path))
-		if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(fullPath, []byte(content), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
-	runTestCommand(t, repo, "git", "add", ".")
-	chdir(t, repo)
-
-	gotDigest, gotCount, err := sourceDigest()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if gotCount != len(files) {
-		t.Fatalf("tracked file count = %d, want %d", gotCount, len(files))
-	}
-	if want := expectedSourceDigest(files); gotDigest != want {
-		t.Fatalf("source digest = %q, want %q", gotDigest, want)
-	}
-}
-
-func TestModuleDigestsIncludesReplaceMetadata(t *testing.T) {
-	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte(`module example.com/root
-
-go 1.23
-
-require example.com/dep v0.0.0
-
-replace example.com/dep => ./dep
-`), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	depDir := filepath.Join(root, "dep")
-	if err := os.MkdirAll(depDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(depDir, "go.mod"), []byte("module example.com/dep\n\ngo 1.23\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	t.Setenv("GOWORK", "off")
-	chdir(t, root)
-
-	modules, err := moduleDigests()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var foundMain bool
-	var foundReplace bool
-	for _, module := range modules {
-		if module.Path == "example.com/root" && module.Main {
-			foundMain = true
-		}
-		if module.Path == "example.com/dep" && module.Replace != nil && module.Replace.Path == "./dep" {
-			foundReplace = true
-		}
-	}
-	if !foundMain {
-		t.Fatalf("modules = %+v, want main module", modules)
-	}
-	if !foundReplace {
-		t.Fatalf("modules = %+v, want replace metadata for example.com/dep", modules)
-	}
-}
-
-func TestWriteManifestCreatesParentAndWritesIndentedJSON(t *testing.T) {
-	manifest := Manifest{
-		Module:           "example.com/lib",
-		Version:          "v1.2.3",
-		Commit:           "abc123",
-		TreeSHA:          "tree123",
-		SourceDigest:     "sha256:source",
-		TrackedFileCount: 1,
-		GoVersion:        "go1.23.0",
-		GeneratedAt:      "2026-01-02T03:04:05Z",
-		GeneratedBy:      "test",
-		TreeState:        "clean",
-		Checks:           map[string]string{"fmt": "passed"},
-		Tools:            map[string]string{"go": "go version"},
-		Artifacts:        []string{"release/manifest/latest.json", "release/manifest/latest.json.sha256"},
-	}
-	path := filepath.Join(t.TempDir(), "release", "manifest", "latest.json")
-
-	if err := writeManifest(path, manifest); err != nil {
-		t.Fatal(err)
-	}
-
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !json.Valid(data) {
-		t.Fatalf("manifest JSON is invalid: %s", data)
-	}
-	if !strings.Contains(string(data), "\n  ") {
-		t.Fatalf("manifest JSON is not indented: %s", data)
-	}
-	assertManifestChecksum(t, path)
-
-	var got Manifest
-	if err := json.Unmarshal(data, &got); err != nil {
-		t.Fatal(err)
-	}
-	if got.Module != manifest.Module || got.Version != manifest.Version {
-		t.Fatalf("round-trip manifest = %+v, want %+v", got, manifest)
-	}
-}
-
-func TestToolVersionReportsMissingBinary(t *testing.T) {
-	got := toolVersion("definitely-missing-releasemanifest-test-binary")
-	if got != "missing" {
-		t.Fatalf("toolVersion missing binary = %q, want missing", got)
-	}
-}
+// Shared test helpers
 
 func repoRoot(t *testing.T) string {
 	t.Helper()
@@ -691,7 +392,7 @@ func releaseManifestFixtureRepo(t *testing.T) string {
 	if err := os.WriteFile(filepath.Join(repo, "go.mod"), []byte("module example.com/releasefixture\n\ngo 1.23\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	for _, path := range contractFiles {
+	for _, path := range contractFiles() {
 		fullPath := filepath.Join(repo, filepath.FromSlash(path))
 		if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
 			t.Fatal(err)
@@ -706,24 +407,6 @@ func releaseManifestFixtureRepo(t *testing.T) string {
 	}
 	runTestCommand(t, repo, "git", "add", ".")
 	return repo
-}
-
-func expectedSourceDigest(files map[string]string) string {
-	paths := make([]string, 0, len(files))
-	for path := range files {
-		paths = append(paths, path)
-	}
-	sort.Strings(paths)
-
-	digest := sha256.New()
-	for _, path := range paths {
-		sum := sha256.Sum256([]byte(files[path]))
-		digest.Write([]byte(path))
-		digest.Write([]byte{0})
-		digest.Write([]byte(hex.EncodeToString(sum[:])))
-		digest.Write([]byte{0})
-	}
-	return "sha256:" + hex.EncodeToString(digest.Sum(nil))
 }
 
 func assertManifestChecksum(t *testing.T, path string) {

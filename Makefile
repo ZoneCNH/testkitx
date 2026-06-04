@@ -73,8 +73,19 @@ evidence:
 release-evidence-check:
 	RELEASE_EVIDENCE_REQUIRE_PASSED=1 ./scripts/check_release_evidence.sh
 
+.PHONY: coverage-check
+coverage-check:
+	@go test ./... -coverprofile=coverage.out -covermode=atomic -timeout 180s
+	@COVERAGE=$$(go tool cover -func=coverage.out | grep 'total:' | awk '{print $$3}' | sed 's/%//'); \
+	echo "Total coverage: $$COVERAGE%"; \
+	if [ $$(echo "$$COVERAGE < 80" | bc -l) -eq 1 ]; then \
+		echo "FAIL: Coverage $$COVERAGE% is below 80% threshold"; \
+		exit 1; \
+	fi
+	@echo "PASS: Coverage meets 80% threshold"
+
 .PHONY: ci
-ci: fmt vet lint test race boundary security contracts
+ci: fmt vet lint test race coverage-check boundary security contracts
 
 .PHONY: ci-extended
 ci-extended: ci property golden fuzz-smoke

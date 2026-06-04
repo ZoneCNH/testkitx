@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/ZoneCNH/testkitx/internal/cliutil"
 )
 
 func TestRunCLIVerifiesValidEvidence(t *testing.T) {
@@ -29,6 +31,7 @@ func TestRunCLIVerifiesValidEvidence(t *testing.T) {
 }
 
 func TestRunCLIVerifyRejectsMissingArtifactURL(t *testing.T) {
+	t.Parallel()
 	evidence := validEvidence()
 	evidence.ArtifactURL = ""
 	path := writeEvidence(t, evidence)
@@ -49,6 +52,7 @@ func TestRunCLIVerifyRejectsMissingArtifactURL(t *testing.T) {
 }
 
 func TestRunCLIVerifyRejectsProductionImports(t *testing.T) {
+	t.Parallel()
 	evidence := validEvidence()
 	evidence.ProductionImports = 1
 	path := writeEvidence(t, evidence)
@@ -66,6 +70,7 @@ func TestRunCLIVerifyRejectsProductionImports(t *testing.T) {
 }
 
 func TestValidateEvidenceAcceptsNumericWorkflowRunID(t *testing.T) {
+	t.Parallel()
 	data := []byte(`{
   "status": "passed",
   "repository": "ZoneCNH/xlib-standard",
@@ -90,6 +95,7 @@ func TestValidateEvidenceAcceptsNumericWorkflowRunID(t *testing.T) {
 }
 
 func TestValidateEvidenceRejectsMissingRequiredFields(t *testing.T) {
+	t.Parallel()
 	failures := validateEvidence(Evidence{})
 
 	for _, want := range []string{
@@ -111,6 +117,7 @@ func TestValidateEvidenceRejectsMissingRequiredFields(t *testing.T) {
 }
 
 func TestValidateEvidenceRejectsPrefixedGitSHA(t *testing.T) {
+	t.Parallel()
 	evidence := validEvidence()
 	evidence.Commit = "sha256:1111111111111111111111111111111111111111"
 
@@ -122,6 +129,7 @@ func TestValidateEvidenceRejectsPrefixedGitSHA(t *testing.T) {
 }
 
 func TestValidateEvidenceRejectsMissingGates(t *testing.T) {
+	t.Parallel()
 	evidence := validEvidence()
 	evidence.Gates = nil
 
@@ -133,6 +141,7 @@ func TestValidateEvidenceRejectsMissingGates(t *testing.T) {
 }
 
 func TestRunCLIRequiresVerifyFlag(t *testing.T) {
+	t.Parallel()
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 
@@ -147,6 +156,7 @@ func TestRunCLIRequiresVerifyFlag(t *testing.T) {
 }
 
 func TestRunCLIRejectsUnknownFlag(t *testing.T) {
+	t.Parallel()
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 
@@ -164,11 +174,12 @@ func TestRunCLIRejectsUnknownFlag(t *testing.T) {
 }
 
 func TestPrintCLIMessageReportsWriterFailure(t *testing.T) {
-	if code := printCLIStatus(errorWriter{}, "ok\n"); code != 1 {
-		t.Fatalf("printCLIStatus exit code = %d, want 1", code)
+	t.Parallel()
+	if code := cliutil.PrintCLIStatus(errorWriter{}, "ok\n"); code != 1 {
+		t.Fatalf("PrintCLIStatus exit code = %d, want 1", code)
 	}
-	if code := printCLIError(errorWriter{}, errors.New("boom")); code != 1 {
-		t.Fatalf("printCLIError exit code = %d, want 1", code)
+	if code := cliutil.PrintCLIError(errorWriter{}, errors.New("boom")); code != 1 {
+		t.Fatalf("PrintCLIError exit code = %d, want 1", code)
 	}
 }
 

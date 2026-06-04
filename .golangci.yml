@@ -12,6 +12,7 @@ linters:
     - unconvert
     - gocritic
     - misspell
+    - gosec
 
 issues:
   max-issues-per-linter: 0

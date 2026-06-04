@@ -11,6 +11,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/ZoneCNH/testkitx/internal/cliutil"
 )
 
 const requiredCICommand = "GOWORK=off make ci"
@@ -70,12 +72,12 @@ func runCLI(name string, args []string, stdout io.Writer, stderr io.Writer) int 
 		return 2
 	}
 	if strings.TrimSpace(*verify) == "" {
-		return printCLIError(stderr, errors.New("-verify is required"))
+		return cliutil.PrintCLIError(stderr, errors.New("-verify is required"))
 	}
 	if err := verifyEvidence(*verify); err != nil {
-		return printCLIError(stderr, err)
+		return cliutil.PrintCLIError(stderr, err)
 	}
-	return printCLIStatus(stdout, "downstream adoption evidence verified: %s\n", *verify)
+	return cliutil.PrintCLIStatus(stdout, "downstream adoption evidence verified: %s\n", *verify)
 }
 
 func verifyEvidence(path string) error {
@@ -200,18 +202,3 @@ func requireHexString(failures *[]string, field string, value string, byteSize i
 	}
 }
 
-func printCLIError(w io.Writer, err error) int {
-	return printCLIMessage(w, 1, "ERROR: %v\n", err)
-}
-
-func printCLIStatus(w io.Writer, format string, args ...any) int {
-	return printCLIMessage(w, 0, format, args...)
-}
-
-func printCLIMessage(w io.Writer, exitCode int, format string, args ...any) int {
-	_, err := fmt.Fprintf(w, format, args...)
-	if err != nil {
-		return 1
-	}
-	return exitCode
-}
