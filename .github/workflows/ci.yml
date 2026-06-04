@@ -41,5 +41,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release-manifest
-          path: release/manifest/latest.json
+          path: |
+            release/manifest/latest.json
+            release/manifest/latest.json.sha256
           if-no-files-found: warn

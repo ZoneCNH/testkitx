@@ -10,7 +10,7 @@
 
 ## Manifest 生成
 
-`make evidence` 调用 `scripts/generate_manifest.sh`，最终由 `internal/tools/releasemanifest` 生成 `release/manifest/latest.json`。生成内容包括：
+`make evidence` 调用 `scripts/generate_manifest.sh`，最终由 `internal/tools/releasemanifest` 生成 `release/manifest/latest.json` 与 `release/manifest/latest.json.sha256`。生成内容包括：
 
 - `commit` 和 `tree_sha`：来自当前 git HEAD。
 - `source_digest` 和 `tracked_file_count`：来自 `git ls-files` 中所有受跟踪文件的路径和内容摘要。
@@ -19,7 +19,7 @@
 - `tools`：Go、`golangci-lint` 和 `govulncheck` 的版本或可用状态。
 - `checks`：`fmt`、`vet`、`lint`、测试、race、boundary、secret scan、security、contract 和 integration gate 状态。
 
-`release/manifest/latest.json` 是生成产物，不提交源码历史；`release/manifest/template.json` 只保留字段模板。
+`release/manifest/latest.json` 和 `release/manifest/latest.json.sha256` 是生成产物，不提交源码历史；`release/manifest/template.json` 只保留字段模板。sidecar 使用标准 sha256sum 风格内容，校验对象是同目录的 `latest.json`。
 
 ## Manifest 校验
 
@@ -28,13 +28,14 @@
 - manifest 的 module、commit、tree SHA、源码摘要和受跟踪文件数量与当前仓库一致。
 - contract 指纹和依赖清单与当前文件、当前 Go module 解析结果一致。
 - 必需 check 均存在，且在 release gate 中必须为 `passed`。
-- artifact 列表包含 `release/manifest/latest.json`。
+- artifact 列表包含 `release/manifest/latest.json` 和 `release/manifest/latest.json.sha256`。
+- `release/manifest/latest.json.sha256` 与当前 `latest.json` 内容一致。
 
 `make release-final-check` 在上述校验之外要求 `tree_state=clean`。正式发布、打 tag 或交付给下游基础库前必须使用该入口。
 
 ## CI Artifact
 
-GitHub Actions 运行 `GOWORK=off make release-check`，并上传 `release/manifest/latest.json` 作为 `release-manifest` artifact。CI 中上传的 artifact 是发布 Evidence 的外部留痕；本地生成的 `latest.json` 只用于验证和排障。
+GitHub Actions 运行 `GOWORK=off make release-check`，并上传 `release/manifest/latest.json` 与 `release/manifest/latest.json.sha256` 作为 `release-manifest` artifact。CI 中上传的 artifact 是发布 Evidence 的外部留痕；本地生成的 `latest.json` 和 sidecar 只用于验证和排障。
 
 ## 下游模板安全线
 

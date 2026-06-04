@@ -23,7 +23,7 @@ scripts/render_template.sh \
 - `testkitx`、`pkg/testkitx` 和 `testkitx` imports 替换为 `--package-name`。
 - 文档、Go 代码、JSON contract、shell 脚本、Makefile 和 CI 配置同步更新。
 
-脚本不会复制 `.git`、`.omx`、`.worktree` 和 `release/manifest/latest.json`。`latest.json` 是生成产物，生成后的库必须自己运行 release gate 生成新的 Evidence artifact。
+脚本不会复制 `.git`、`.omx`、`.worktree`、`release/manifest/latest.json` 和 `release/manifest/latest.json.sha256`。这些 release Evidence 文件是生成产物，生成后的库必须自己运行 release gate 生成新的 Evidence artifact。
 
 ## 验证
 
@@ -51,7 +51,7 @@ GOWORK=off make release-check
 
 ## 生成后 Release Evidence
 
-生成后的库会继承 `internal/tools/releasemanifest`。该工具会生成并校验 `release/manifest/latest.json`，其中包括当前 HEAD、tree SHA、源码摘要、contract SHA256、依赖清单和工具版本。发布前应使用：
+生成后的库会继承 `internal/tools/releasemanifest`。该工具会生成并校验 `release/manifest/latest.json` 与 `release/manifest/latest.json.sha256`，其中包括当前 HEAD、tree SHA、源码摘要、contract SHA256、依赖清单、工具版本和 manifest checksum。发布前应使用：
 
 ```bash
 GOWORK=off make release-final-check

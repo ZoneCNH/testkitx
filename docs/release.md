@@ -27,7 +27,7 @@ GOWORK=off make release-check
 GOWORK=off make release-final-check
 ```
 
-`release-final-check` 会在完整 gate 之后要求 `release/manifest/latest.json` 与当前 HEAD、源码摘要、contract 指纹和依赖清单一致，并要求 git 工作区为 `clean`。它适合在打 tag 或发布前运行；开发中的 `release-check` 允许工作区因为未提交改动显示为 `dirty`，但仍会校验 manifest 与当前内容一致。
+`release-final-check` 会在完整 gate 之后要求 `release/manifest/latest.json` 与 `release/manifest/latest.json.sha256` 同当前 HEAD、源码摘要、contract 指纹和依赖清单一致，并要求 git 工作区为 `clean`。它适合在打 tag 或发布前运行；开发中的 `release-check` 允许工作区因为未提交改动显示为 `dirty`，但仍会校验 manifest、sidecar checksum 与当前内容一致。
 
 打 tag 前推荐使用 release preflight：
 
@@ -80,7 +80,7 @@ fuzz-smoke
 
 ## Evidence
 
-发布 Evidence 生成到 `release/manifest/latest.json`，该文件是生成产物，不提交到源码历史。提交到仓库的是 `release/manifest/template.json`；CI release workflow 会上传 `latest.json` 作为 artifact。
+发布 Evidence 生成到 `release/manifest/latest.json` 和 `release/manifest/latest.json.sha256`，这两个文件是生成产物，不提交到源码历史。提交到仓库的是 `release/manifest/template.json`；CI release workflow 会上传 `latest.json` 与 sidecar checksum 作为 artifact。
 
 `latest.json` 至少包含：
 
@@ -101,7 +101,7 @@ fuzz-smoke
 - `artifacts`
 - `notes`
 
-`make release-check` 成功后会以 `CHECK_STATUS=passed` 生成 manifest，并立即运行 `make release-evidence-check`。若单独运行 `make evidence`，未显式传入的检查状态默认为 `unknown`，后续校验会拒绝把这些状态当作已通过的 release gate。因为 `latest.json` 不再提交，manifest 中的 `commit` 可以指向实际执行 release gate 的 HEAD，避免自引用提交哈希导致的永久漂移。
+`make release-check` 成功后会以 `CHECK_STATUS=passed` 生成 manifest 和 `.sha256` sidecar，并立即运行 `make release-evidence-check`。若单独运行 `make evidence`，未显式传入的检查状态默认为 `unknown`，后续校验会拒绝把这些状态当作已通过的 release gate。因为 `latest.json` 和 sidecar 不再提交，manifest 中的 `commit` 可以指向实际执行 release gate 的 HEAD，避免自引用提交哈希导致的永久漂移。
 
 Extended Evidence 推荐额外记录：
 

@@ -1,9 +1,6 @@
-// Package testkitx provides a minimal base-library template package.
+// Package testkitx provides L1 test-only helper packages for Go library validation.
 //
-// This package demonstrates the required structure for independent base libraries:
-// Config, Validate, Sanitize, New, Close, HealthCheck, Error model, Metrics hooks,
-// tests, examples, contracts, CI gates, release manifest, and agent evidence.
-//
-// This package must not depend on github.com/bytechainx/x.go, github.com/ZoneCNH/x.go,
-// or any x.go internal package.
+// It is intended for tests, fixtures, release evidence, boundary checks, and
+// deterministic harnesses. Production packages must not import it, and it must
+// not depend on real service providers, L2/x.go packages, or production secrets.
 package testkitx

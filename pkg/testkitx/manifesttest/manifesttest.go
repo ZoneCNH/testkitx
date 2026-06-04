@@ -2,10 +2,15 @@
 package manifesttest
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"testing"
 )
 
 type Manifest struct {
@@ -36,7 +41,11 @@ func Write(path string, m Manifest) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Clean(path), append(data, '\n'), 0o644)
+	cleanPath := filepath.Clean(path)
+	if err := os.WriteFile(cleanPath, append(data, '\n'), 0o644); err != nil {
+		return err
+	}
+	return WriteChecksum(cleanPath)
 }
 func Read(path string) (Manifest, error) {
 	data, err := os.ReadFile(filepath.Clean(path))
@@ -46,4 +55,55 @@ func Read(path string) (Manifest, error) {
 	var m Manifest
 	err = json.Unmarshal(data, &m)
 	return m, err
+}
+
+func ChecksumPath(path string) string {
+	return filepath.Clean(path) + ".sha256"
+}
+
+func SHA256(path string) (string, error) {
+	data, err := os.ReadFile(filepath.Clean(path))
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(data)
+	return "sha256:" + hex.EncodeToString(sum[:]), nil
+}
+
+func WriteChecksum(path string) error {
+	digest, err := SHA256(path)
+	if err != nil {
+		return err
+	}
+	rawDigest := strings.TrimPrefix(digest, "sha256:")
+	content := fmt.Sprintf("%s  %s\n", rawDigest, filepath.Base(path))
+	return os.WriteFile(ChecksumPath(path), []byte(content), 0o644)
+}
+
+func VerifyChecksum(path string) error {
+	digest, err := SHA256(path)
+	if err != nil {
+		return err
+	}
+	data, err := os.ReadFile(ChecksumPath(path))
+	if err != nil {
+		return err
+	}
+	fields := strings.Fields(string(data))
+	if len(fields) == 0 {
+		return errors.New("manifest checksum is empty")
+	}
+	want := strings.TrimPrefix(strings.ToLower(fields[0]), "sha256:")
+	got := strings.TrimPrefix(digest, "sha256:")
+	if got != want {
+		return fmt.Errorf("manifest checksum mismatch: got %s, want %s", got, want)
+	}
+	return nil
+}
+
+func AssertChecksum(t testing.TB, path string) {
+	t.Helper()
+	if err := VerifyChecksum(path); err != nil {
+		t.Fatalf("manifest checksum verification failed: %v", err)
+	}
 }

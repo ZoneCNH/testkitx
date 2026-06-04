@@ -10,7 +10,7 @@
 ## 验收标准
 
 - `GOWORK=off go test ./...` 和 `GOWORK=off go test -race ./...` 通过。
-- `GOWORK=off make release-check` 通过，并以 `CHECK_STATUS=passed` 生成未提交的 `release/manifest/latest.json` Evidence artifact。
+- `GOWORK=off make release-check` 通过，并以 `CHECK_STATUS=passed` 生成未提交的 `release/manifest/latest.json` 与 `release/manifest/latest.json.sha256` Evidence artifact。
 - `contracts/config.schema.json` 与 `Config` 字段映射保持一致，`timeout_ms` 映射到 `Config.Timeout`。
 - `contracts/error.schema.json`、`contracts/health.schema.json` 和 `contracts/metrics.md` 与公共常量保持一致。
 - `scripts/render_template.sh` 可以生成 `foundationx` 形态并通过 `GOWORK=off go test ./...`。

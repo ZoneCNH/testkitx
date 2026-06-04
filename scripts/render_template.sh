@@ -75,6 +75,7 @@ fi
     --exclude='./.omx' \
     --exclude='./.worktree' \
     --exclude='./release/manifest/latest.json' \
+    --exclude='./release/manifest/latest.json.sha256' \
     -cf - .
 ) | (
   cd "$out_dir"

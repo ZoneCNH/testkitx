@@ -126,7 +126,7 @@ func runCLI(name string, args []string, stdout io.Writer, stderr io.Writer) int 
 	if err := writeManifest(*out, manifest); err != nil {
 		return printCLIError(stderr, err)
 	}
-	return printCLIStatus(stdout, "generated %s\n", *out)
+	return printCLIStatus(stdout, "generated %s and %s\n", *out, manifestChecksumPath(*out))
 }
 
 func printCLIError(w io.Writer, err error) int {
@@ -185,6 +185,7 @@ func buildManifest() (Manifest, error) {
 		},
 		Artifacts: []string{
 			"release/manifest/latest.json",
+			"release/manifest/latest.json.sha256",
 		},
 		Notes: Notes{
 			BreakingChanges: "none",
@@ -257,6 +258,12 @@ func verifyManifest(path string, requirePassed bool, requireClean bool, expectVe
 	if !contains(got.Artifacts, "release/manifest/latest.json") {
 		failures = append(failures, "artifacts must include release/manifest/latest.json")
 	}
+	if !contains(got.Artifacts, "release/manifest/latest.json.sha256") {
+		failures = append(failures, "artifacts must include release/manifest/latest.json.sha256")
+	}
+	if err := verifyManifestChecksum(path, data); err != nil {
+		failures = append(failures, err.Error())
+	}
 	if got.Tools["go"] == "" {
 		failures = append(failures, "tools.go must be recorded")
 	}
@@ -278,7 +285,53 @@ func writeManifest(path string, manifest Manifest) error {
 	if err := encoder.Encode(manifest); err != nil {
 		return err
 	}
-	return os.WriteFile(path, buf.Bytes(), 0o644)
+	if err := os.WriteFile(path, buf.Bytes(), 0o644); err != nil {
+		return err
+	}
+	return writeManifestChecksum(path, buf.Bytes())
+}
+
+func manifestChecksumPath(path string) string {
+	return path + ".sha256"
+}
+
+func writeManifestChecksum(path string, data []byte) error {
+	sum := sha256.Sum256(data)
+	content := fmt.Sprintf("%s  %s\n", hex.EncodeToString(sum[:]), filepath.Base(path))
+	return os.WriteFile(manifestChecksumPath(path), []byte(content), 0o644)
+}
+
+func verifyManifestChecksum(path string, data []byte) error {
+	sidecarPath := manifestChecksumPath(path)
+	expected, err := readManifestChecksum(sidecarPath)
+	if err != nil {
+		return err
+	}
+	sum := sha256.Sum256(data)
+	got := hex.EncodeToString(sum[:])
+	if got != expected {
+		return fmt.Errorf("%s does not match %s", sidecarPath, path)
+	}
+	return nil
+}
+
+func readManifestChecksum(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	fields := strings.Fields(string(data))
+	if len(fields) == 0 {
+		return "", fmt.Errorf("%s is empty", path)
+	}
+	checksum := strings.TrimPrefix(strings.ToLower(fields[0]), "sha256:")
+	if len(checksum) != sha256.Size*2 {
+		return "", fmt.Errorf("%s has invalid sha256 digest", path)
+	}
+	if _, err := hex.DecodeString(checksum); err != nil {
+		return "", fmt.Errorf("%s has invalid sha256 digest: %w", path, err)
+	}
+	return checksum, nil
 }
 
 func buildChecks() map[string]string {

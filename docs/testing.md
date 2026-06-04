@@ -9,6 +9,22 @@
 
 本模板遵循 [测试策略母版](test-strategy.md)。默认强制 SDD、ATDD、TDD、Contract、Boundary、Security、Integration Smoke 和 Evidence；默认增强 Property、Fuzz Smoke、Golden、Compatibility 和 Observability；Chaos、Mutation、Long Soak 和 Full E2E 只由派生库按 profile 启用。
 
+## L1 测试能力库规则
+
+当前 `testkitx` 的主身份是 L1 测试专用能力库。下游只能在 `*_test.go`、`testkit/`、`tools/`、`examples/` 或 CI/fixture 临时目录中 import `github.com/ZoneCNH/testkitx/pkg/testkitx/...`；生产 Go 文件不得依赖该模块。
+
+核心 helper 包包括：
+
+- `assertx`：稳定断言和 eventually 检查。
+- `golden`：默认只比较 golden，只有 `TESTKITX_UPDATE_GOLDEN=1` 时才更新。
+- `contract`：contract SHA256 校验和机器可读 Evidence。
+- `fixture`：隔离 temp root、HOME、module 目录和 `GOWORK=off` 环境。
+- `harness`：命令执行与 stdout/stderr/env digest Evidence。
+- `clocktest`、`obstest`、`leaktest`：确定性时间、可观测性 recorder 和 goroutine leak 检查。
+- `boundarytest`、`manifesttest`、`repotest`：生产 import 边界、manifest fixture、manifest checksum sidecar 和仓库 fixture。
+
+采用与当前状态说明见 [当前状态与采用说明](current-state-adoption.zh-CN.md)。
+
 ## 测试模式矩阵
 
 | 模式 | 是否默认强制 | Gate | 说明 |
@@ -51,6 +67,7 @@
 - `make contracts`
 - `make integration`
 - `make evidence`
+- `make manifest-fixture-check`
 
 ## 扩展 Gate
 

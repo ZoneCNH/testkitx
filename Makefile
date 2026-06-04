@@ -57,6 +57,14 @@ fuzz-smoke:
 golden:
 	go test ./... -run 'Test.*Golden|Test.*Snapshot'
 
+.PHONY: manifest-fixture-check
+manifest-fixture-check:
+	go test ./pkg/testkitx/manifesttest/... -run 'Test.*Manifest|Test.*Checksum'
+
+.PHONY: downstream-test-only-adoption-check
+downstream-test-only-adoption-check:
+	./scripts/check_downstream_adoption.sh
+
 .PHONY: evidence
 evidence:
 	./scripts/generate_manifest.sh

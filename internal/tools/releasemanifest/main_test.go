@@ -95,6 +95,7 @@ func TestRunCLIGeneratesManifestToOut(t *testing.T) {
 	if !json.Valid(data) {
 		t.Fatalf("generated manifest is invalid JSON: %s", data)
 	}
+	assertManifestChecksum(t, outPath)
 
 	var manifest Manifest
 	if err := json.Unmarshal(data, &manifest); err != nil {
@@ -145,6 +146,9 @@ func TestRunCLIGenerateReportsBuildManifestFailure(t *testing.T) {
 	}
 	if _, err := os.Stat(outPath); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("generated manifest exists after failed build: %v", err)
+	}
+	if _, err := os.Stat(manifestChecksumPath(outPath)); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("generated manifest checksum exists after failed build: %v", err)
 	}
 }
 
@@ -219,6 +223,36 @@ func TestRunCLIVerifyRejectsExpectedVersionMismatch(t *testing.T) {
 		t.Fatalf("stdout = %q, want empty", stdout.String())
 	}
 	if want := `version mismatch: got "v1.2.3", want "v9.9.9"`; !strings.Contains(stderr.String(), want) {
+		t.Fatalf("stderr = %q, want substring %q", stderr.String(), want)
+	}
+}
+
+func TestRunCLIVerifyRejectsChecksumMismatch(t *testing.T) {
+	t.Setenv("GOWORK", "off")
+	t.Setenv("VERSION", "v1.2.3")
+	t.Setenv("CHECK_STATUS", "passed")
+	chdir(t, releaseManifestFixtureRepo(t))
+
+	outPath := filepath.Join(t.TempDir(), "latest.json")
+	var generateStdout bytes.Buffer
+	var generateStderr bytes.Buffer
+	if code := runCLI("releasemanifest", []string{"-out", outPath}, &generateStdout, &generateStderr); code != 0 {
+		t.Fatalf("runCLI generate exit code = %d, want 0; stderr: %s", code, generateStderr.String())
+	}
+	if err := os.WriteFile(manifestChecksumPath(outPath), []byte(strings.Repeat("0", sha256.Size*2)+"  latest.json\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runCLI("releasemanifest", []string{"-verify", outPath}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("runCLI verify exit code = %d, want 1; stdout: %s; stderr: %s", code, stdout.String(), stderr.String())
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout = %q, want empty", stdout.String())
+	}
+	if want := manifestChecksumPath(outPath) + " does not match " + outPath; !strings.Contains(stderr.String(), want) {
 		t.Fatalf("stderr = %q, want substring %q", stderr.String(), want)
 	}
 }
@@ -392,6 +426,9 @@ func TestBuildManifestRecordsCurrentRepositoryFacts(t *testing.T) {
 	if !contains(manifest.Artifacts, "release/manifest/latest.json") {
 		t.Fatalf("artifacts = %v, want release/manifest/latest.json", manifest.Artifacts)
 	}
+	if !contains(manifest.Artifacts, "release/manifest/latest.json.sha256") {
+		t.Fatalf("artifacts = %v, want release/manifest/latest.json.sha256", manifest.Artifacts)
+	}
 	for _, name := range checkNames {
 		if manifest.Checks[name] != "passed" {
 			t.Fatalf("checks[%q] = %q, want passed", name, manifest.Checks[name])
@@ -561,7 +598,7 @@ func TestWriteManifestCreatesParentAndWritesIndentedJSON(t *testing.T) {
 		TreeState:        "clean",
 		Checks:           map[string]string{"fmt": "passed"},
 		Tools:            map[string]string{"go": "go version"},
-		Artifacts:        []string{"release/manifest/latest.json"},
+		Artifacts:        []string{"release/manifest/latest.json", "release/manifest/latest.json.sha256"},
 	}
 	path := filepath.Join(t.TempDir(), "release", "manifest", "latest.json")
 
@@ -579,6 +616,7 @@ func TestWriteManifestCreatesParentAndWritesIndentedJSON(t *testing.T) {
 	if !strings.Contains(string(data), "\n  ") {
 		t.Fatalf("manifest JSON is not indented: %s", data)
 	}
+	assertManifestChecksum(t, path)
 
 	var got Manifest
 	if err := json.Unmarshal(data, &got); err != nil {
@@ -686,6 +724,31 @@ func expectedSourceDigest(files map[string]string) string {
 		digest.Write([]byte{0})
 	}
 	return "sha256:" + hex.EncodeToString(digest.Sum(nil))
+}
+
+func assertManifestChecksum(t *testing.T, path string) {
+	t.Helper()
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sidecar, err := os.ReadFile(manifestChecksumPath(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fields := strings.Fields(string(sidecar))
+	if len(fields) < 1 {
+		t.Fatalf("checksum sidecar is empty: %q", sidecar)
+	}
+	sum := sha256.Sum256(data)
+	want := hex.EncodeToString(sum[:])
+	if got := fields[0]; got != want {
+		t.Fatalf("checksum = %q, want %q", got, want)
+	}
+	if len(fields) > 1 && fields[1] != filepath.Base(path) {
+		t.Fatalf("checksum filename = %q, want %q", fields[1], filepath.Base(path))
+	}
 }
 
 type errorWriter struct{}
