@@ -3,6 +3,7 @@ package testkitx
 import (
 	"context"
 	"errors"
+	"fmt"
 )
 
 type ErrorKind string
@@ -50,6 +51,30 @@ func (e *Error) Error() string {
 		message += ": " + e.Cause.Error()
 	}
 	return message
+}
+
+// Format implements fmt.Formatter.
+// %v, %s: same as Error() output (kind: op: message)
+// %+v: full detail with cause chain and retryable flag
+// %#v: Go syntax representation
+func (e *Error) Format(f fmt.State, c rune) {
+	if e == nil {
+		_, _ = fmt.Fprint(f, "<nil>")
+		return
+	}
+	switch {
+	case c == 'v' && f.Flag('#'):
+		_, _ = fmt.Fprintf(f, "&testkitx.Error{Kind:%q, Op:%q, Message:%q, Cause:%#v, Retryable:%t}",
+			e.Kind, e.Op, e.Message, e.Cause, e.Retryable)
+	case c == 'v' && f.Flag('+'):
+		_, _ = fmt.Fprintf(f, "%s", e.Error())
+		_, _ = fmt.Fprintf(f, "\n    retryable: %t", e.Retryable)
+		if e.Cause != nil {
+			_, _ = fmt.Fprintf(f, "\n    cause: %s", e.Cause.Error())
+		}
+	default:
+		_, _ = fmt.Fprint(f, e.Error())
+	}
 }
 
 func (e *Error) Unwrap() error {

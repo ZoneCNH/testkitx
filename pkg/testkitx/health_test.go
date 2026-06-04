@@ -9,6 +9,7 @@ import (
 )
 
 func TestHealthCheckHealthy(t *testing.T) {
+	t.Parallel()
 	metrics := &recordingMetrics{}
 	client, err := New(context.Background(), Config{Name: "testkitx"}, WithMetrics(metrics))
 	if err != nil {
@@ -34,6 +35,7 @@ func TestHealthCheckHealthy(t *testing.T) {
 }
 
 func TestHealthCheckClosedClientUnhealthy(t *testing.T) {
+	t.Parallel()
 	client, err := New(context.Background(), Config{Name: "testkitx"})
 	if err != nil {
 		t.Fatalf("new client: %v", err)
@@ -49,6 +51,7 @@ func TestHealthCheckClosedClientUnhealthy(t *testing.T) {
 }
 
 func TestHealthCheckCanceledContextUnhealthy(t *testing.T) {
+	t.Parallel()
 	client, err := New(context.Background(), Config{Name: "testkitx"})
 	if err != nil {
 		t.Fatalf("new client: %v", err)
@@ -66,6 +69,7 @@ func TestHealthCheckCanceledContextUnhealthy(t *testing.T) {
 }
 
 func TestHealthCheckNilContextUnhealthy(t *testing.T) {
+	t.Parallel()
 	client, err := New(context.Background(), Config{Name: "testkitx"})
 	if err != nil {
 		t.Fatalf("new client: %v", err)
@@ -81,6 +85,7 @@ func TestHealthCheckNilContextUnhealthy(t *testing.T) {
 }
 
 func TestHealthCheckDeadlineBelowTimeoutDegraded(t *testing.T) {
+	t.Parallel()
 	metrics := &recordingMetrics{}
 	client, err := New(context.Background(), Config{
 		Name:    "testkitx",
@@ -136,6 +141,7 @@ func TestHealthCheckDeadlineBelowTimeoutDegraded(t *testing.T) {
 }
 
 func TestHealthCheckTimeoutWithoutDeadlineHealthy(t *testing.T) {
+	t.Parallel()
 	metrics := &recordingMetrics{}
 	client, err := New(context.Background(), Config{
 		Name:    "testkitx",
@@ -166,6 +172,7 @@ func TestHealthCheckTimeoutWithoutDeadlineHealthy(t *testing.T) {
 }
 
 func TestHealthCheckDeadlineAboveTimeoutHealthy(t *testing.T) {
+	t.Parallel()
 	client, err := New(context.Background(), Config{
 		Name:    "testkitx",
 		Timeout: 10 * time.Millisecond,
@@ -186,6 +193,7 @@ func TestHealthCheckDeadlineAboveTimeoutHealthy(t *testing.T) {
 }
 
 func TestHealthCheckZeroValueClientUnhealthy(t *testing.T) {
+	t.Parallel()
 	var client Client
 
 	status := client.HealthCheck(context.Background())
@@ -198,6 +206,7 @@ func TestHealthCheckZeroValueClientUnhealthy(t *testing.T) {
 }
 
 func TestHealthStatusJSONContract(t *testing.T) {
+	t.Parallel()
 	payload, err := json.Marshal(HealthStatus{
 		Name:      "testkitx",
 		Status:    HealthHealthy,

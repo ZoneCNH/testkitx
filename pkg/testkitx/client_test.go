@@ -8,6 +8,7 @@ import (
 )
 
 func TestNewRejectsInvalidConfig(t *testing.T) {
+	t.Parallel()
 	metrics := &recordingMetrics{}
 
 	_, err := New(context.Background(), Config{Timeout: time.Second}, WithMetrics(metrics))
@@ -23,6 +24,7 @@ func TestNewRejectsInvalidConfig(t *testing.T) {
 }
 
 func TestNewRejectsCanceledContext(t *testing.T) {
+	t.Parallel()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
@@ -39,6 +41,7 @@ func TestNewRejectsCanceledContext(t *testing.T) {
 }
 
 func TestNewRejectsExpiredContext(t *testing.T) {
+	t.Parallel()
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
 
@@ -55,6 +58,7 @@ func TestNewRejectsExpiredContext(t *testing.T) {
 }
 
 func TestCloseIsIdempotent(t *testing.T) {
+	t.Parallel()
 	metrics := &recordingMetrics{}
 	client, err := New(context.Background(), Config{Name: "testkitx"}, WithMetrics(metrics))
 	if err != nil {
@@ -76,6 +80,7 @@ func TestCloseIsIdempotent(t *testing.T) {
 }
 
 func TestCloseRejectsCanceledContext(t *testing.T) {
+	t.Parallel()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	client, err := New(context.Background(), Config{Name: "testkitx"})
@@ -96,6 +101,7 @@ func TestCloseRejectsCanceledContext(t *testing.T) {
 }
 
 func TestCloseRejectsZeroValueClient(t *testing.T) {
+	t.Parallel()
 	var client Client
 
 	err := client.Close(context.Background())

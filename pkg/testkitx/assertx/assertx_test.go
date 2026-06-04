@@ -9,6 +9,7 @@ import (
 )
 
 func TestEventuallySucceedsAfterRetry(t *testing.T) {
+	t.Parallel()
 	attempts := 0
 	assertx.Eventually(t, time.Second, time.Millisecond, func() error {
 		attempts++

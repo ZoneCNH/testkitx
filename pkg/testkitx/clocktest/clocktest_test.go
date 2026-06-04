@@ -8,6 +8,7 @@ import (
 )
 
 func TestFakeClockAdvancesDeterministically(t *testing.T) {
+	t.Parallel()
 	start := time.Date(2026, 6, 4, 0, 0, 0, 0, time.UTC)
 	clock := clocktest.New(start)
 	clock.Advance(2 * time.Second)

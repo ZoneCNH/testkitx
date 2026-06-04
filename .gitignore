@@ -7,6 +7,7 @@
 *.dll
 *.so
 *.dylib
+/releasemanifest
 
 # Test binary, built with `go test -c`
 *.test
@@ -30,6 +31,11 @@ release/manifest/latest.json.sha256
 
 # env file
 .env
+
+# Agent orchestration state
+.worktree/
+.omc/
+.omx/
 
 # Editor/IDE
 # .idea/

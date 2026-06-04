@@ -9,6 +9,7 @@ import (
 )
 
 func TestScanProductionImportsFlagsOnlyProductionViolations(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	write := func(rel, body string) {
 		path := filepath.Join(root, rel)

@@ -10,6 +10,7 @@ import (
 )
 
 func TestNewWorkspaceCreatesIsolatedHomeAndModule(t *testing.T) {
+	t.Parallel()
 	workspace := fixture.NewWorkspace(t, "example.test/module")
 	if workspace.Root == "" || workspace.Home == "" || workspace.ModuleDir == "" {
 		t.Fatalf("workspace paths not populated: %+v", workspace)
@@ -28,7 +29,7 @@ func TestNewWorkspaceCreatesIsolatedHomeAndModule(t *testing.T) {
 		t.Fatalf("unexpected go.mod: %s", goMod)
 	}
 
-	workspace.Write("nested/file.txt", []byte("contents"))
+	workspace.WriteOrFatal(t, "nested/file.txt", []byte("contents"))
 	got, err := os.ReadFile(filepath.Join(workspace.ModuleDir, "nested/file.txt"))
 	if err != nil {
 		t.Fatal(err)

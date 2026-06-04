@@ -9,6 +9,7 @@ import (
 )
 
 func TestWriteFileCreatesParentDirectories(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	if _, err := repotest.WriteFile(root, "a/b/c.txt", []byte("data")); err != nil {
 		t.Fatal(err)

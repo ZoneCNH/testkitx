@@ -10,6 +10,7 @@ import (
 )
 
 func TestHealthStatusJSONGolden(t *testing.T) {
+	t.Parallel()
 	payload, err := json.Marshal(testkitx.HealthStatus{
 		Name:      "testkitx",
 		Status:    testkitx.HealthHealthy,

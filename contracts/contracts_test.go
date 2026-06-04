@@ -45,6 +45,7 @@ func TestErrorKindContractMatchesPublicConstants(t *testing.T) {
 }
 
 func TestHealthStatusContractMatchesPublicConstants(t *testing.T) {
+	t.Parallel()
 	schema := readSchema(t, "health.schema.json")
 
 	expected := sortedStrings(
@@ -60,6 +61,7 @@ func TestHealthStatusContractMatchesPublicConstants(t *testing.T) {
 }
 
 func TestConfigContractMatchesPublicConfig(t *testing.T) {
+	t.Parallel()
 	schema := readSchema(t, "config.schema.json")
 	requireFields(t, schema.Required, "name")
 
@@ -77,6 +79,7 @@ func TestConfigContractMatchesPublicConfig(t *testing.T) {
 }
 
 func TestMetricsContractDocumentsPublicConstants(t *testing.T) {
+	t.Parallel()
 	content, err := os.ReadFile("metrics.md")
 	if err != nil {
 		t.Fatalf("read metrics contract: %v", err)

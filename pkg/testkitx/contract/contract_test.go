@@ -10,6 +10,7 @@ import (
 )
 
 func TestAssertHashAndWriteEvidence(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), "contract.json")
 	if err := os.WriteFile(path, []byte(`{"version":1}`), 0o644); err != nil {
 		t.Fatal(err)

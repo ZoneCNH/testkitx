@@ -7,6 +7,7 @@ import (
 )
 
 func TestCheckPassesWithoutNewGoroutines(t *testing.T) {
+	t.Parallel()
 	start := leaktest.Capture()
 	if err := leaktest.Check(start, 2); err != nil {
 		t.Fatalf("unexpected leak failure: %v", err)

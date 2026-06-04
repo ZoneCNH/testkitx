@@ -9,6 +9,7 @@ func TestRequireNonEmptyRejectsEmptyValue(t *testing.T) {
 }
 
 func TestRequireNonEmptyAcceptsValue(t *testing.T) {
+	t.Parallel()
 	if err := RequireNonEmpty("name", "testkitx"); err != nil {
 		t.Fatalf("expected value to pass: %v", err)
 	}

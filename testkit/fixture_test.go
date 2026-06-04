@@ -6,6 +6,7 @@ import (
 )
 
 func TestConfigBuildsValidFixture(t *testing.T) {
+	t.Parallel()
 	cfg := Config("fixture")
 	if cfg.Name != "fixture" {
 		t.Fatalf("unexpected name: %q", cfg.Name)
@@ -17,5 +18,6 @@ func TestConfigBuildsValidFixture(t *testing.T) {
 }
 
 func TestRequireNoErrorAcceptsNil(t *testing.T) {
+	t.Parallel()
 	RequireNoError(t, nil)
 }

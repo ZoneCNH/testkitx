@@ -7,6 +7,7 @@ import (
 )
 
 func TestConfigSanitizeSecretProperty(t *testing.T) {
+	t.Parallel()
 	property := func(secret string) bool {
 		sanitized := Config{
 			Name:    "testkitx",
@@ -30,6 +31,7 @@ func TestConfigSanitizeSecretProperty(t *testing.T) {
 }
 
 func TestConfigNegativeTimeoutInvariant(t *testing.T) {
+	t.Parallel()
 	for _, timeout := range []time.Duration{-1, -time.Nanosecond, -time.Second} {
 		err := Config{Name: "testkitx", Timeout: timeout}.Validate()
 		if err == nil || !IsKind(err, ErrorKindValidation) {

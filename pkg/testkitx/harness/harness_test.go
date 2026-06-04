@@ -9,6 +9,7 @@ import (
 )
 
 func TestRunCapturesCommandEvidence(t *testing.T) {
+	t.Parallel()
 	result := harness.Run(context.Background(), harness.Command{
 		Name: "/bin/sh",
 		Args: []string{"-c", "printf ok; printf err >&2; exit 7"},
@@ -26,6 +27,7 @@ func TestRunCapturesCommandEvidence(t *testing.T) {
 }
 
 func TestRunMarksTimeout(t *testing.T) {
+	t.Parallel()
 	result := harness.Run(context.Background(), harness.Command{
 		Name:    "/bin/sh",
 		Args:    []string{"-c", "sleep 1"},

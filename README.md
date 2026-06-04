@@ -1,5 +1,11 @@
 # testkitx
 
+[![CI](https://github.com/ZoneCNH/testkitx/actions/workflows/ci.yml/badge.svg)](https://github.com/ZoneCNH/testkitx/actions/workflows/ci.yml)
+[![Security](https://github.com/ZoneCNH/testkitx/actions/workflows/security.yml/badge.svg)](https://github.com/ZoneCNH/testkitx/actions/workflows/security.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ZoneCNH/testkitx)](https://goreportcard.com/report/github.com/ZoneCNH/testkitx)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/ZoneCNH/testkitx)](go.mod)
+
 `testkitx` 是 `github.com/ZoneCNH/testkitx` 的 **L1 测试专用能力库**。它为 Go 基础库和基础设施库提供可复用的测试断言、golden 回归、contract hash、隔离 fixture、命令 harness、fake clock、可观测性 recorder、goroutine leak 检查、生产 import 边界扫描、manifest fixture 和仓库文件 fixture。
 
 `testkitx` 不是生产运行时基础库，也不是用于生成业务库的默认模板基座。下游库只能在测试代码、测试工具、示例或显式测试夹具中使用它；生产包不得 import `github.com/ZoneCNH/testkitx/pkg/testkitx/...`。

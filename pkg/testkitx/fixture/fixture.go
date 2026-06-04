@@ -32,13 +32,23 @@ func NewWorkspace(t testing.TB, modulePath string) Workspace {
 	return Workspace{Root: root, Home: home, ModuleDir: mod, Env: map[string]string{"HOME": home, "GOWORK": "off"}}
 }
 
-func (w Workspace) Write(path string, data []byte) string {
+func (w Workspace) Write(path string, data []byte) (string, error) {
 	clean := filepath.Join(w.ModuleDir, filepath.Clean(path))
 	if err := os.MkdirAll(filepath.Dir(clean), 0o755); err != nil {
-		panic(err)
+		return "", err
 	}
 	if err := os.WriteFile(clean, data, 0o644); err != nil {
-		panic(err)
+		return "", err
+	}
+	return clean, nil
+}
+
+// WriteOrFatal writes data to the workspace, calling t.Fatal on error.
+func (w Workspace) WriteOrFatal(t testing.TB, path string, data []byte) string {
+	t.Helper()
+	clean, err := w.Write(path, data)
+	if err != nil {
+		t.Fatalf("write fixture file %s: %v", path, err)
 	}
 	return clean
 }

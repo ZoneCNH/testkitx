@@ -6,6 +6,7 @@ import (
 )
 
 func TestConfigValidateRequiresName(t *testing.T) {
+	t.Parallel()
 	err := Config{Timeout: time.Second}.Validate()
 	if err == nil {
 		t.Fatal("expected missing name to fail validation")
@@ -16,6 +17,7 @@ func TestConfigValidateRequiresName(t *testing.T) {
 }
 
 func TestConfigValidateRejectsNegativeTimeout(t *testing.T) {
+	t.Parallel()
 	err := Config{Name: "testkitx", Timeout: -time.Second}.Validate()
 	if err == nil {
 		t.Fatal("expected negative timeout to fail validation")
@@ -26,6 +28,7 @@ func TestConfigValidateRejectsNegativeTimeout(t *testing.T) {
 }
 
 func TestConfigSanitizeMasksSecret(t *testing.T) {
+	t.Parallel()
 	sanitized := Config{Name: "testkitx", Timeout: time.Second, Secret: "plain-text"}.Sanitize()
 	if sanitized.Secret != "***" {
 		t.Fatalf("expected masked secret, got %q", sanitized.Secret)

@@ -9,6 +9,7 @@ func TestSecretMasksNonEmptyValue(t *testing.T) {
 }
 
 func TestSecretPreservesEmptyValue(t *testing.T) {
+	t.Parallel()
 	if got := Secret(""); got != "" {
 		t.Fatalf("expected empty value, got %q", got)
 	}

@@ -36,6 +36,18 @@ jobs:
       - name: Release Check
         run: GOWORK=off make release-check
 
+      - name: Coverage Report
+        if: always()
+        run: GOWORK=off go test ./... -coverprofile=coverage.out -covermode=atomic -timeout 180s
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.out
+          if-no-files-found: warn
+
       - name: Upload release evidence
         if: always()
         uses: actions/upload-artifact@v4

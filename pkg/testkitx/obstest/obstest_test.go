@@ -7,6 +7,7 @@ import (
 )
 
 func TestRecorderCapturesCountersAndLogs(t *testing.T) {
+	t.Parallel()
 	recorder := obstest.NewRecorder()
 	recorder.Inc("requests")
 	recorder.Inc("requests")

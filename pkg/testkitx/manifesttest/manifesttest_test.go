@@ -9,6 +9,7 @@ import (
 )
 
 func TestManifestRoundTripAndValidate(t *testing.T) {
+	t.Parallel()
 	manifest := manifesttest.New("github.com/ZoneCNH/testkitx", "abc123")
 	manifest.Gates["test"] = "go test ./..."
 	manifest.Evidence = append(manifest.Evidence, "evidence.json")
@@ -31,6 +32,7 @@ func TestManifestRoundTripAndValidate(t *testing.T) {
 }
 
 func TestManifestChecksumDetectsDrift(t *testing.T) {
+	t.Parallel()
 	manifest := manifesttest.New("github.com/ZoneCNH/testkitx", "abc123")
 	path := filepath.Join(t.TempDir(), "manifest.json")
 	if err := manifesttest.Write(path, manifest); err != nil {
