@@ -74,6 +74,7 @@ fi
     --exclude='./.git' \
     --exclude='./.omx' \
     --exclude='./.worktree' \
+    --exclude='./coverage.out' \
     --exclude='./release/manifest/latest.json' \
     --exclude='./release/manifest/latest.json.sha256' \
     -cf - .
