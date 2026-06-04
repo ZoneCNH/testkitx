@@ -20,7 +20,7 @@
 1. 从干净的 `testkitx` 工作区开始，确认基础 gate 可运行。
 2. 使用 `scripts/render_template.sh` 渲染目标库，而不是手工批量替换。
 3. 在生成后的目标库内运行 `GOWORK=off go test ./...`。
-4. 根据目标库 profile 补充具体 adapter、配置字段、health check 和 integration smoke。
+4. 根据目标库 profile 补充具体 adapter、配置字段、health check 和 integration smoke；profile 可参考 `docs/test-strategy.md` 中的 Pure、Config、Observability、Storage 和 Messaging 分层。
 5. 运行目标库自己的 `make ci`、`make integration` 和 `make release-check`。
 6. 检查目标库生成的 `release/manifest/latest.json`，确认 module、commit、tree SHA、contract 指纹、工具版本和 gate 结果来自目标库自身。
 7. 在发布或合并声明中使用 `DONE with evidence:`，列出实际命令和 artifact。

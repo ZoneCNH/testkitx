@@ -11,6 +11,7 @@
 - `examples/` 与 `testkit/` 提供 smoke 示例、测试夹具和断言。
 - `scripts/` 与 `Makefile` 提供 CI、boundary、contracts、security、integration、Evidence 和 release preflight gate。
 - `release/manifest/template.json` 是提交到源码的 manifest 模板；`release/manifest/latest.json` 是本地或 CI 生成的 Evidence artifact，不应提交。
+- `CHANGELOG.md` 已记录 `v0.2.0`：release preflight、CI 工具安装和 release Evidence 版本比对已纳入当前治理状态。
 
 ## 与历史 Goal 的关系
 
