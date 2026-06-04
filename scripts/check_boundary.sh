@@ -3,6 +3,7 @@ set -euo pipefail
 
 echo "checking forbidden L2, provider and x.go dependencies..."
 
+MODULE_PATH="$(go list -m)"
 DEPS="$(go list -deps ./...)"
 FORBIDDEN_DEPS=(
   "github.com/bytechainx/x.go"
@@ -33,6 +34,9 @@ FORBIDDEN_DEPS=(
 )
 
 for dep in "${FORBIDDEN_DEPS[@]}"; do
+  if [[ "$dep" == "$MODULE_PATH" ]]; then
+    continue
+  fi
   if grep -Fq "$dep" <<<"$DEPS"; then
     echo "ERROR: testkitx must not depend on forbidden L2/provider dependency: $dep"
     exit 1
