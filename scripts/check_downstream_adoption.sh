@@ -66,24 +66,7 @@ check_evidence_file() {
     echo "ERROR: DOWNSTREAM_ADOPTION_EVIDENCE does not exist: $evidence" >&2
     exit 1
   fi
-  if ! grep -Eq '"status"[[:space:]]*:[[:space:]]*"passed"' "$evidence"; then
-    echo "ERROR: downstream evidence must record status=passed" >&2
-    exit 1
-  fi
-  if ! grep -Eq '"test_imports"[[:space:]]*:[[:space:]]*[1-9][0-9]*' "$evidence"; then
-    echo "ERROR: downstream evidence must record at least one test_imports entry" >&2
-    exit 1
-  fi
-  if ! grep -Eq '"production_imports"[[:space:]]*:[[:space:]]*0' "$evidence"; then
-    echo "ERROR: downstream evidence must record production_imports=0" >&2
-    exit 1
-  fi
-  if ! grep -Eq 'GOWORK=off make ci' "$evidence"; then
-    echo "ERROR: downstream evidence must record command GOWORK=off make ci" >&2
-    exit 1
-  fi
-
-  echo "downstream adoption evidence accepted: $evidence"
+  go run ./internal/tools/downstreamadoption -verify "$evidence"
 }
 
 if [[ -n "${DOWNSTREAM_REPO:-}" ]]; then
