@@ -62,8 +62,16 @@
 
 ## 文档入口
 
-- [当前状态与采用说明](docs/current-state-adoption.zh-CN.md)：本仓库 L1 身份、当前完成状态、采用步骤和 Full 口径缺口。
-- [测试](docs/testing.md)：测试策略、L1 helpers、golden 更新规则和 Evidence 要求。
+- [身份说明](docs/identity.md)：项目身份、模板定位和不可越界的生产约束。
+- [当前状态](docs/current-state.md)：当前实现事实、历史 Goal 关系和验证入口。
+- [采用说明](docs/adoption.md)：下游基础库采用路径、检查清单和风险。
+- [规格](docs/spec.md)：模板能力、验收标准和可追踪性。
+- [设计](docs/design.md)：模块边界、公共 API、错误、健康检查和指标设计。
+- [API](docs/api.md)：`Config`、`Client`、typed error、health JSON 和 metrics contract。
+- [配置](docs/config.md)：显式配置、validation 和脱敏规则。
+- [生成](docs/generation.md)：从模板渲染 `foundationx` 等具体基础库。
+- [错误模型](docs/errors.md)：`ErrorKind`、`NewError`、`WrapError` 和重试语义。
+- [可观测性](docs/observability.md)：指标名、健康状态和 JSON 字段。
 - [测试策略母版](docs/test-strategy.md)：Required、Extended 和 profile-specific gates。
 - [规格](docs/spec.md)：历史模板能力、验收标准和可追踪性。
 - [设计](docs/design.md)：历史模板边界、公共 API、错误、健康检查和指标设计。
