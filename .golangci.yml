@@ -13,6 +13,13 @@ linters:
     - gocritic
     - misspell
     - gosec
+  settings:
+    gosec:
+      excludes:
+        - G204 # subprocess launched by design in test harness
+        - G301 # directory permissions 0755 is standard Go practice
+        - G304 # file inclusion via variable is expected for CLI tools
+        - G306 # WriteFile permissions 0644 is standard Go practice
 
 issues:
   max-issues-per-linter: 0

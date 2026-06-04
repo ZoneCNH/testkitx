@@ -25,7 +25,7 @@ func NewWorkspace(t testing.TB, modulePath string) Workspace {
 		}
 	}
 	if modulePath != "" {
-		if err := os.WriteFile(filepath.Join(mod, "go.mod"), []byte("module "+modulePath+"\n\ngo 1.23\n"), 0o644); err != nil {
+		if err := os.WriteFile(filepath.Join(mod, "go.mod"), []byte("module "+modulePath+"\n\ngo 1.24\n"), 0o644); err != nil {
 			t.Fatalf("write go.mod: %v", err)
 		}
 	}

@@ -67,7 +67,7 @@ func TestModuleDigestsIncludesReplaceMetadata(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte(`module example.com/root
 
-go 1.23
+go 1.24
 
 require example.com/dep v0.0.0
 
@@ -79,7 +79,7 @@ replace example.com/dep => ./dep
 	if err := os.MkdirAll(depDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(depDir, "go.mod"), []byte("module example.com/dep\n\ngo 1.23\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(depDir, "go.mod"), []byte("module example.com/dep\n\ngo 1.24\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 

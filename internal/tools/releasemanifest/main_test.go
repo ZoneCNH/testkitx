@@ -70,7 +70,7 @@ func TestRunCLIGenerateReportsBuildManifestFailure(t *testing.T) {
 	t.Setenv("GOWORK", "off")
 	repo := t.TempDir()
 	runTestCommand(t, repo, "git", "init")
-	if err := os.WriteFile(filepath.Join(repo, "go.mod"), []byte("module example.com/brokenmanifest\n\ngo 1.23\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(repo, "go.mod"), []byte("module example.com/brokenmanifest\n\ngo 1.24\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	runTestCommand(t, repo, "git", "add", ".")
@@ -389,7 +389,7 @@ func releaseManifestFixtureRepo(t *testing.T) string {
 
 	repo := t.TempDir()
 	runTestCommand(t, repo, "git", "init")
-	if err := os.WriteFile(filepath.Join(repo, "go.mod"), []byte("module example.com/releasefixture\n\ngo 1.23\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(repo, "go.mod"), []byte("module example.com/releasefixture\n\ngo 1.24\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	for _, path := range contractFiles() {
