@@ -2,6 +2,21 @@
 
 ## 未发布
 
+## v0.3.0
+
+### 变更
+- `fixture.Workspace.Write()` 返回 `(string, error)` 而非 panic；新增 `WriteOrFatal(t testing.TB, path string, data []byte) string` 便捷方法
+- `HealthCheck` 提取 `newHealthStatus` 辅助函数，消除 ~60 行重复代码
+- `internal/tools/releasemanifest/main.go`（532 行）拆分为 6 个文件（checksum.go、digest.go、manifest.go、verify.go、util.go、main.go）
+- `Error` 结构体实现 `fmt.Formatter`，支持 `%v`（标准输出）、`%+v`（含 cause chain 和 retryable 标志）、`%#v`（Go 语法表示）
+
+### 改进
+- 44 个测试函数添加 `t.Parallel()` 以支持并行执行
+- golangci-lint 扩展：增加 `errcheck`、`gocritic`、`misspell`、`unconvert`
+- CI workflow 增加覆盖率报告（`-coverprofile`）和 artifact 上传
+- README 添加 CI、Security、Go Report Card、License、Version badges
+- `.gitignore` 增加 `.worktree/`、`.omc/`、`.omx/` agent 状态目录
+
 ## v0.2.0 - 2026-06-01
 
 ### 新增

@@ -14,7 +14,7 @@
 - `New`：基于显式配置创建客户端；拒绝 `nil`、canceled 和 expired context；成功时记录 `client_created_total`。
 - `Close`：释放资源，并且必须幂等；成功首次关闭时记录 `client_closed_total`。
 - `HealthCheck`：报告客户端健康状态，JSON 字段必须匹配 `contracts/health.schema.json`；当本次检查的 context deadline 预算短于 `Config.Timeout` 时返回 `degraded`。
-- `Error`：稳定 error contract，支持 `errors.Is` / `errors.As` 和 `IsKind`。
+- `Error`：稳定 error contract，支持 `errors.Is` / `errors.As`、`IsKind` 和 `fmt.Formatter`（`%v` / `%+v` / `%#v`）。
 - `NewError` / `WrapError`：创建或包装稳定错误，包装时必须保留 cause。
 - `Metrics`：注入式指标钩子；指标名必须匹配 `contracts/metrics.md`。
 - `Version`：发布版本。

@@ -99,6 +99,11 @@
 - `Config` 边界输入必须由 fuzz-smoke 覆盖。
 - `HealthStatus` JSON 公共输出必须由 golden test 锁定。
 
+## t.Parallel() 标准
+
+- 无共享状态的测试函数必须调用 `t.Parallel()`。
+- 表驱动测试需在 range 循环内使用 `tc := tc` 捕获循环变量后调用 `t.Parallel()`。
+
 ## 示例与 testkit Smoke
 
 - `examples/basic` 必须输出当前 module name。

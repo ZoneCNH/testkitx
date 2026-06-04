@@ -26,3 +26,11 @@
 - 调用方按 `IsKind(err, ErrorKind...)` 做分支判断，不依赖错误字符串。
 - 错误可以安全纳入 Evidence，但不得包含原始凭据、生产连接串或业务私密数据。
 - 生成的库不得使用 `x.go` 业务模型。
+
+### 结构化格式化
+
+`Error` 实现 `fmt.Formatter` 接口：
+
+- `%v` / `%s`：标准输出（`kind: op: message`）
+- `%+v`：详细输出，含 retryable 标志和 cause chain
+- `%#v`：Go 语法表示（`&testkitx.Error{...}`）

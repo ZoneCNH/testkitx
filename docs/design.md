@@ -14,11 +14,11 @@
 
 ## 错误模型
 
-错误使用稳定的 `ErrorKind` 枚举，并通过 `Unwrap` 支持错误包装。上下文超时归类为 `timeout` 且可重试；上下文取消归类为 `unavailable` 且不可重试。
+错误使用稳定的 `ErrorKind` 枚举，并通过 `Unwrap` 支持错误包装。上下文超时归类为 `timeout` 且可重试；上下文取消归类为 `unavailable` 且不可重试。并通过 `fmt.Formatter` 支持结构化格式化（`%v` / `%+v` / `%#v`）。
 
 ## 健康检查
 
-持有资源的客户端暴露 `HealthCheck(context.Context)`，并返回 `healthy`、`degraded` 或 `unhealthy`。返回结构使用 `name`、`status`、`message`、`checked_at`、`latency_ms` 和 `metadata` JSON 字段；nil client、零值 client、已关闭 client、nil context 和已取消 context 都必须返回 `unhealthy`。已初始化且未关闭的 client 如果本次检查的 context deadline 预算短于 `Config.Timeout`，必须返回 `degraded`，并在 `metadata` 中记录降级原因。
+持有资源的客户端暴露 `HealthCheck(context.Context)`，并返回 `healthy`、`degraded` 或 `unhealthy`。返回结构使用 `name`、`status`、`message`、`checked_at`、`latency_ms` 和 `metadata` JSON 字段；所有状态构造统一通过 `newHealthStatus` 辅助函数完成，确保一致性。nil client、零值 client、已关闭 client、nil context 和已取消 context 都必须返回 `unhealthy`。已初始化且未关闭的 client 如果本次检查的 context deadline 预算短于 `Config.Timeout`，必须返回 `degraded`，并在 `metadata` 中记录降级原因。
 
 ## 指标
 

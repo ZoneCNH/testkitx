@@ -49,6 +49,11 @@ make release-check
 
 `make ci` 保持快、稳、轻，负责默认开发与 PR 基线。
 
+### L1 Unit/TDD 层标准
+
+- 测试函数必须调用 `t.Parallel()`（无共享状态时）。
+- 覆盖率报告（`go test -coverprofile`）作为 CI evidence gate。
+
 ## 5. Extended Gates
 
 Extended Gates 推荐默认实现，但不进入轻量 `make ci`：

@@ -34,7 +34,7 @@
 
 公共 L1 测试能力位于 `pkg/testkitx/`：
 
-- `assertx`：轻量断言、`NoError`、`ErrorIs` 和 `Eventually`。
+- `assertx`：轻量断言、`NoError`、`ErrorIs` 和 `Eventually`；`Error` 支持 `fmt.Formatter`。
 - `golden`：bytes/JSON golden 比较与 opt-in 更新，输出 hash Evidence。
 - `contract`：contract 文件 SHA256 校验与 Evidence 写入。
 - `fixture`：隔离 workspace、HOME、module 和环境变量。
@@ -121,6 +121,7 @@ import (
 
 func TestConfigFixture(t *testing.T) {
 	workspace := fixture.NewWorkspace(t, "example.test/downstream")
+	workspace.WriteOrFatal(t, "config.json", []byte(`{"name":"test"}`))
 	assertx.Equal(t, "off", workspace.Env["GOWORK"])
 }
 ```
@@ -135,6 +136,7 @@ func TestConfigFixture(t *testing.T) {
 - `GOWORK=off go vet ./...` 覆盖 Go 静态检查。
 - `GOWORK=off make golden` 锁定稳定输出且不默认更新 golden。
 - Contract、harness、golden、manifest helper 通过结构化 Evidence 类型承载审计字段。
+- CI 现在会生成覆盖率报告作为 Evidence artifact。
 - Full 口径仍需要外部 CI artifact URL、下游真实仓库采用证明和发布 tag/manifest artifact；这些不是本地文档变更能单独证明的事实。
 
 最终对外完成声明应包含 `DONE with evidence:`，并列出本地 gate、外部 CI artifact、下游采用证据和任何未完成缺口。
