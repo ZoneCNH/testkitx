@@ -34,6 +34,9 @@
 
 ## 文档入口
 
+- [身份说明](docs/identity.md)：项目身份、模板定位和不可越界的生产约束。
+- [当前状态](docs/current-state.md)：当前实现事实、历史 Goal 关系和验证入口。
+- [采用说明](docs/adoption.md)：下游基础库采用路径、检查清单和风险。
 - [规格](docs/spec.md)：模板能力、验收标准和可追踪性。
 - [设计](docs/design.md)：模块边界、公共 API、错误、健康检查和指标设计。
 - [API](docs/api.md)：`Config`、`Client`、typed error、health JSON 和 metrics contract。
