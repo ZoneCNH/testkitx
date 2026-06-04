@@ -2,6 +2,21 @@
 
 ## 未发布
 
+## v0.3.1 - 2026-06-05
+
+### 修复
+- CI Go 版本 `1.25.8` 不存在，改为 `1.23`（影响全部 4 个工作流）
+- `.gitignore` 添加 `.claude/` 目录，防止认证令牌意外提交
+- `internal/tools/releasemanifest/main_test.go`（758 行）拆分为 5 个文件（checksum_test、manifest_test、verify_test、util_test、main_test）
+- `internal/tools/releasemanifest/` 中 3 个包级 `var` 改为 `func()` 返回值，表达不可变意图
+
+### 改进
+- 提取重复 CLI 辅助函数到 `internal/cliutil/` 共享包
+- 为所有 eligible 测试函数添加 `t.Parallel()`
+- golangci-lint 添加 `gosec` linter（共 8 个）
+- Makefile 添加 `coverage-check` 目标，强制 80% 最低覆盖率阈值
+- 分析报告更新至 100/100 评分
+
 ## v0.3.0
 
 ### 变更
