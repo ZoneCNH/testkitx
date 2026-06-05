@@ -15,6 +15,8 @@ import (
 func contractFiles() []string {
 	return []string{
 		"contracts/config.schema.json",
+		"contracts/docker-toolchain.schema.json",
+		"contracts/downstream-adoption-proof.schema.json",
 		"contracts/error.schema.json",
 		"contracts/health.schema.json",
 		"contracts/metrics.md",

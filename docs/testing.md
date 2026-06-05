@@ -1,13 +1,13 @@
-# 测试模板
+# 测试策略
 
-## 占位符
+## 模块标识
 
 - `testkitx`
 - `testkitx`
 
 ## 测试策略
 
-本模板遵循 [测试策略母版](test-strategy.md)。默认强制 SDD、ATDD、TDD、Contract、Boundary、Security、Integration Smoke 和 Evidence；默认增强 Property、Fuzz Smoke、Golden、Compatibility 和 Observability；Chaos、Mutation、Long Soak 和 Full E2E 只由派生库按 profile 启用。
+本仓库遵循 [测试策略母版](test-strategy.md)。当前 L1 helper 默认强制 SDD、ATDD、TDD、Contract、Boundary、Security、Integration Smoke 和 Evidence；默认增强 Property、Fuzz Smoke、Golden、Compatibility 和 Observability；Chaos、Mutation、Long Soak 和 Full E2E 只由采用方按自身 profile 启用。历史模板渲染只作为 integration regression 保留。
 
 ## L1 测试能力库规则
 
@@ -36,7 +36,7 @@
 | Contract | 是 | `make contracts` | schema、metrics、errors |
 | Boundary | 是 | `make boundary` | 模块边界 |
 | Security | 是 | `make security` | `govulncheck` 和 secret scan |
-| Integration Smoke | 是 | `make integration` | 模板渲染后可运行 |
+| Integration Smoke | 是 | `make integration` | 历史模板渲染回归可运行 |
 | Evidence | 是 | `make evidence` / `make release-check` | release manifest 与 gate 结果 |
 | Property | 推荐 | `make property` | 不变量测试 |
 | Fuzz Smoke | 推荐 | `make fuzz-smoke` | 边界输入测试 |
@@ -94,10 +94,14 @@
 - 生命周期 metrics 和健康 metrics。
 - `contracts/` 与公共常量同步。
 - `contracts/config.schema.json` 与 `Config` 字段映射同步。
-- `scripts/render_template.sh` 生成的临时 `foundationx` 可以通过 `GOWORK=off go test ./...`。
+- `scripts/render_template.sh` 生成的临时 `foundationx` 作为历史回归 fixture，可以通过 `GOWORK=off go test ./...`。
 - `Config.Sanitize` 的 secret 不变量必须由 property test 覆盖。
 - `Config` 边界输入必须由 fuzz-smoke 覆盖。
 - `HealthStatus` JSON 公共输出必须由 golden test 锁定。
+- `servicex.WaitUntil` 必须覆盖默认 deadline、调用方 deadline、已取消 context、nil ready、ready error passthrough 和 nil context。
+- `contract/sql` transaction runner 必须覆盖 commit path、rollback path、operation ordering 和 tx exec error。
+- `contract/timeseries` stable runner 必须覆盖 contract metric name、false stability signal 和 `Stable` error。
+- `evidence` 与 `pkg/testkitx/contract` evidence writer 必须先验证再创建文件或目录，并覆盖嵌套 `WriteFile` JSON 输出。
 
 ## t.Parallel() 标准
 
@@ -110,7 +114,7 @@
 - `examples/config` 必须输出脱敏后的 secret 值。
 - `examples/health` 必须输出 `healthy`。
 - `testkit` 必须验证 `Config("fixture")` 生成可通过 `Validate` 的测试配置。
-- `testkit.RequireNoError` 必须接受 `nil`，作为生成库测试断言的最小契约。
+- `testkit.RequireNoError` 必须接受 `nil`，作为测试断言的最小契约。
 - `testkit.RequireGolden` 必须比较稳定公共输出，并在 mismatch 时输出 expected 和 actual 上下文。
 
-生成的基础库必须保持测试独立于 `x.go`。
+本仓库和临时渲染 fixture 必须保持测试独立于 `x.go`。

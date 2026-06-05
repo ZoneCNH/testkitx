@@ -7,6 +7,8 @@ import (
 )
 
 func TestValidateChecksRequiresPassedStatuses(t *testing.T) {
+	t.Parallel()
+
 	checks := make(map[string]string, len(checkNames()))
 	for _, name := range checkNames() {
 		checks[name] = "passed"
@@ -20,6 +22,25 @@ func TestValidateChecksRequiresPassedStatuses(t *testing.T) {
 	}
 	if !strings.Contains(failures[0], "checks.security") {
 		t.Fatalf("failure = %q, want security check failure", failures[0])
+	}
+}
+
+func TestValidateChecksRejectsInvalidStatusWithoutRequirePassed(t *testing.T) {
+	t.Parallel()
+
+	checks := make(map[string]string, len(checkNames()))
+	for _, name := range checkNames() {
+		checks[name] = "unknown"
+	}
+	checks["security"] = "bogus"
+
+	failures := validateChecks(checks, false)
+
+	if len(failures) != 1 {
+		t.Fatalf("len(failures) = %d, want 1: %v", len(failures), failures)
+	}
+	if !strings.Contains(failures[0], `checks.security has invalid status "bogus"`) {
+		t.Fatalf("failure = %q, want invalid status failure", failures[0])
 	}
 }
 

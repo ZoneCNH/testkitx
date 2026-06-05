@@ -2,7 +2,7 @@
 
 ## 目标
 
-本模板的 release Evidence 不是普通构建日志，而是可重复校验的发布事实清单。它必须回答三个问题：
+本仓库的 release Evidence 不是普通构建日志，而是可重复校验的发布事实清单。它必须回答三个问题：
 
 - 当前发布对应哪个 Go module、commit 和 git tree。
 - 当前源码、contract 文件和依赖清单是否与 manifest 一致。
@@ -37,6 +37,6 @@
 
 GitHub Actions 运行 `GOWORK=off make release-check`，并上传 `release/manifest/latest.json` 与 `release/manifest/latest.json.sha256` 作为 `release-manifest` artifact。CI 中上传的 artifact 是发布 Evidence 的外部留痕；本地生成的 `latest.json` 和 sidecar 只用于验证和排障。
 
-## 下游模板安全线
+## 历史模板回归安全线
 
-`make integration` 会渲染 `foundationx` 和 `corekit` 两个临时下游库，检查旧模板标识是否清空，并在下游库内生成、校验 release Evidence。这保证模板替换逻辑、contract gate、boundary gate 和 Evidence 工具不会只在模板仓库自身成立。
+`make integration` 会渲染 `foundationx` 和 `corekit` 两个临时下游库，检查旧模板标识是否清空，并在下游库内生成、校验 release Evidence。这保证历史模板替换逻辑、contract gate、boundary gate 和 Evidence 工具不会只在当前仓库自身成立。新的下游采用仍应直接依赖 released `testkitx` helper，并通过生产 import 边界扫描证明只用于测试路径。

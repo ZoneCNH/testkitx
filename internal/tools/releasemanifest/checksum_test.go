@@ -10,6 +10,8 @@ import (
 )
 
 func TestFileDigestRecordsPathAndSHA256(t *testing.T) {
+	t.Parallel()
+
 	path := t.TempDir() + "/contract.json"
 	if err := os.WriteFile(path, []byte("abc"), 0o644); err != nil {
 		t.Fatal(err)
@@ -26,6 +28,28 @@ func TestFileDigestRecordsPathAndSHA256(t *testing.T) {
 	const want = "sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
 	if digest.SHA256 != want {
 		t.Fatalf("sha256 = %q, want %q", digest.SHA256, want)
+	}
+}
+
+func TestContractFilesCoverReleaseContracts(t *testing.T) {
+	t.Parallel()
+
+	required := []string{
+		"contracts/config.schema.json",
+		"contracts/docker-toolchain.schema.json",
+		"contracts/downstream-adoption-proof.schema.json",
+		"contracts/error.schema.json",
+		"contracts/health.schema.json",
+		"contracts/metrics.md",
+	}
+	seen := make(map[string]struct{}, len(contractFiles()))
+	for _, path := range contractFiles() {
+		seen[path] = struct{}{}
+	}
+	for _, path := range required {
+		if _, ok := seen[path]; !ok {
+			t.Fatalf("contractFiles() does not include %q", path)
+		}
 	}
 }
 

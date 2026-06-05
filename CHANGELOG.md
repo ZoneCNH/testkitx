@@ -2,6 +2,25 @@
 
 ## 未发布
 
+## v0.4.0 - 2026-06-05
+
+### 新增
+
+- 新增 `contract/` L2 test-only runtime contract surface，覆盖 columnstore、eventlog、kv、objectstore、pubsub、sql 和 timeseries provider 行为。
+- 新增 `requirex`、`servicex` 和 `evidence` 辅助包，用于下游测试断言、服务等待和 Evidence 结构化输出。
+- 新增 Docker toolchain contract、schema、`.devcontainer`、Dockerfile、compose 配置和 `make docker-*` 目标。
+
+### 改进
+
+- 强化 release manifest 校验、checksum 文件名绑定和 downstream adoption proof 结构校验。
+- 同步 L1/L2 adoption、xlib standard scope、release、supply-chain 和 API 文档。
+- Security workflow 改为从 `go.mod` 读取 Go 版本，并补齐缓存、手动触发和定时扫描配置。
+
+### 修复
+
+- 为剩余 eligible 测试函数补齐 `t.Parallel()`。
+- 修正 `servicex.WaitUntil` 对 nil/canceled context 和 ready error 的处理。
+
 ## v0.3.1 - 2026-06-05
 
 ### 修复

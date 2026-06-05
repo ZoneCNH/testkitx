@@ -39,7 +39,7 @@ func writeManifestChecksum(path string, data []byte) error {
 
 func verifyManifestChecksum(path string, data []byte) error {
 	sidecarPath := manifestChecksumPath(path)
-	expected, err := readManifestChecksum(sidecarPath)
+	expected, err := readManifestChecksum(sidecarPath, filepath.Base(path))
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func verifyManifestChecksum(path string, data []byte) error {
 	return nil
 }
 
-func readManifestChecksum(path string) (string, error) {
+func readManifestChecksum(path string, expectedFilename string) (string, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
@@ -66,6 +66,9 @@ func readManifestChecksum(path string) (string, error) {
 	}
 	if _, err := hex.DecodeString(checksum); err != nil {
 		return "", fmt.Errorf("%s has invalid sha256 digest: %w", path, err)
+	}
+	if len(fields) > 1 && fields[1] != expectedFilename {
+		return "", fmt.Errorf("%s references %q, want %q", path, fields[1], expectedFilename)
 	}
 	return checksum, nil
 }

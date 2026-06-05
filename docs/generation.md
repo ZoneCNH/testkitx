@@ -1,8 +1,20 @@
-# 生成模板
+# 历史模板生成
 
-## 用途
+## 当前定位
 
-`scripts/render_template.sh` 用于把 `testkitx` 渲染为具体基础库，例如 `foundationx`。脚本负责同步替换 module name、module path、package name、`pkg/` 目录名、imports、文档占位符和脚本中的模板名称。
+`scripts/render_template.sh` 是历史模板兼容和 integration regression 入口。它用于证明旧的模板渲染路径、包名替换、contract gate、boundary gate 和 release Evidence 生成没有意外回归。
+
+当前 `testkitx` 的主身份是 L1 测试专用能力库。新的下游基础库采用 `testkitx` 时，应直接在测试代码、测试工具、示例或 fixture 中 import released helper，并通过边界扫描证明生产 import 图没有依赖 `testkitx`。不要把模板渲染作为默认采用路径。
+
+## 兼容用途
+
+仍可在以下场景使用生成脚本：
+
+- 维护历史模板资产的 regression 测试。
+- 验证包名、module path、imports、contract 和 manifest 替换逻辑。
+- 临时构造下游 fixture，用于检查当前仓库 gate 是否覆盖旧模板路径。
+
+不应使用生成脚本来证明新的 L1 test-only 采用完成。采用证明必须来自真实下游仓库或明确的测试 fixture，并包含生产 import 边界扫描结果。
 
 ## 示例
 
@@ -19,19 +31,13 @@ scripts/render_template.sh \
 ## 渲染范围
 
 - `testkitx` 替换为 `--module-name`。
-- `github.com/ZoneCNH/testkitx` 和 `github.com/ZoneCNH/testkitx` 替换为 `--module-path`。
-- `testkitx`、`pkg/testkitx` 和 `testkitx` imports 替换为 `--package-name`。
+- `github.com/ZoneCNH/testkitx` 替换为 `--module-path`。
+- `pkg/testkitx`、包名和 imports 替换为 `--package-name`。
 - 文档、Go 代码、JSON contract、shell 脚本、Makefile 和 CI 配置同步更新。
 
 脚本不会复制 `.git`、`.omc`、`.omx`、`.worktree`、`release/manifest/latest.json` 和 `release/manifest/latest.json.sha256`。这些 release Evidence 文件是生成产物，生成后的库必须自己运行 release gate 生成新的 Evidence artifact。
 
-## 验证
-
-生成后至少运行：
-
-```bash
-GOWORK=off make release-check
-```
+## 回归验证
 
 模板自身的 `make integration` 会渲染两个临时下游库：
 
@@ -40,25 +46,11 @@ GOWORK=off make release-check
 
 每个临时库都会运行以下验证：
 
-- `scripts/check_rendered_template.sh`：确认 `go.mod` module path、`pkg/<package>` 目录、旧模板目录、旧 module path、占位符和 `testkitx` 标识。
+- `scripts/check_rendered_template.sh`
 - `GOWORK=off go test ./...`
 - `GOWORK=off make contracts`
 - `GOWORK=off make boundary`
 - `CHECK_STATUS=passed GOWORK=off make evidence`
 - `RELEASE_EVIDENCE_REQUIRE_PASSED=1 GOWORK=off make release-evidence-check`
 
-这组验证用于防止生成脚本、包路径、imports、contract gate、boundary gate 和生成后 Evidence 回归。
-
-## 生成后 Release Evidence
-
-生成后的库会继承 `internal/tools/releasemanifest`。该工具会生成并校验 `release/manifest/latest.json` 与 `release/manifest/latest.json.sha256`，其中包括当前 HEAD、tree SHA、源码摘要、contract SHA256、依赖清单、工具版本和 manifest checksum。发布前应使用：
-
-```bash
-GOWORK=off make release-final-check
-```
-
-`release-final-check` 要求所有 gate 状态为 `passed`，并要求 git 工作区为 `clean`。如果只是开发中自测，`make release-check` 已足够；它允许工作区显示 `dirty`，但仍会验证 manifest 和当前源码内容一致。
-
-## 边界
-
-生成后的基础库仍必须保持独立，不能依赖 `github.com/bytechainx/x.go`、`github.com/ZoneCNH/x.go` 或任何 `x.go/internal/*` 包。
+这组验证仅代表历史模板 regression 通过，不替代 `testkitx` 作为 L1 测试库的下游采用证明。

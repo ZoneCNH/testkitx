@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ZoneCNH/testkitx/pkg/testkitx/contract"
@@ -20,9 +21,14 @@ func TestAssertHashAndWriteEvidence(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	evidence := contract.AssertHash(t, "api-contract", path, hash, map[string]string{"suite": "unit"})
+	metadata := map[string]string{"suite": "unit"}
+	evidence := contract.AssertHash(t, "api-contract", path, hash, metadata)
+	metadata["suite"] = "mutated"
 	if !evidence.Matched || evidence.SHA256 != hash || evidence.Kind != "contract_check" {
 		t.Fatalf("unexpected evidence: %+v", evidence)
+	}
+	if evidence.Metadata["suite"] != "unit" {
+		t.Fatalf("expected evidence metadata to be immutable after AssertHash, got %+v", evidence.Metadata)
 	}
 
 	out := filepath.Join(t.TempDir(), "evidence.json")
@@ -39,5 +45,49 @@ func TestAssertHashAndWriteEvidence(t *testing.T) {
 	}
 	if decoded.ContractID != "api-contract" || decoded.Metadata["suite"] != "unit" {
 		t.Fatalf("unexpected decoded evidence: %+v", decoded)
+	}
+}
+
+func TestWriteEvidenceValidatesBeforeCreatingFile(t *testing.T) {
+	t.Parallel()
+	out := filepath.Join(t.TempDir(), "nested", "evidence.json")
+	err := contract.WriteEvidence(out, contract.Evidence{Kind: "contract_check"})
+	if err == nil || !strings.Contains(err.Error(), "contract_id is required") {
+		t.Fatalf("expected contract_id validation failure, got %v", err)
+	}
+	if _, err := os.Stat(filepath.Dir(out)); !os.IsNotExist(err) {
+		t.Fatalf("expected invalid evidence directory not to exist, got %v", err)
+	}
+}
+
+func TestWriteEvidenceRejectsUnmatchedEvidence(t *testing.T) {
+	t.Parallel()
+	out := filepath.Join(t.TempDir(), "nested", "evidence.json")
+	err := contract.WriteEvidence(out, contract.Evidence{
+		Kind:         "contract_check",
+		ContractID:   "api-contract",
+		ContractPath: "contract.json",
+		SHA256:       strings.Repeat("0", 64),
+		Matched:      false,
+	})
+	if err == nil || !strings.Contains(err.Error(), "matched must be true") {
+		t.Fatalf("expected matched validation failure, got %v", err)
+	}
+	if _, statErr := os.Stat(out); !os.IsNotExist(statErr) {
+		t.Fatalf("expected invalid evidence file not to be created, got %v", statErr)
+	}
+}
+
+func TestEvidenceValidateRejectsMalformedHash(t *testing.T) {
+	t.Parallel()
+	evidence := contract.Evidence{
+		Kind:         "contract_check",
+		ContractID:   "api-contract",
+		ContractPath: "contract.json",
+		SHA256:       "not-a-sha",
+		Matched:      true,
+	}
+	if err := evidence.Validate(); err == nil || !strings.Contains(err.Error(), "sha256 is invalid") {
+		t.Fatalf("expected sha validation failure, got %v", err)
 	}
 }

@@ -1,10 +1,10 @@
-# API 模板
+# API
 
-## 占位符
+## 模块标识
 
-- `testkitx`：生成的仓库名称。
-- `github.com/ZoneCNH/testkitx`：生成的 Go module 路径。
-- `testkitx`：生成的包名。
+- `testkitx`：仓库名称。
+- `github.com/ZoneCNH/testkitx`：Go module 路径。
+- `testkitx`：公共包名。
 
 ## 公共 API
 
@@ -19,8 +19,8 @@
 - `Metrics`：注入式指标钩子；指标名必须匹配 `contracts/metrics.md`。
 - `Version`：发布版本。
 
-生成的基础库不得依赖 `x.go`。
+当前模块、下游测试采用和历史渲染 fixture 都不得依赖 `x.go`。
 
-## 生成对齐
+## 历史生成回归
 
-使用 `scripts/render_template.sh` 生成具体基础库时，公共包目录会从 `pkg/testkitx` 移动到 `pkg/testkitx`，代码 imports、文档占位符和 module path 会同步替换。
+`scripts/render_template.sh` 保留为历史模板兼容和 integration regression 入口。它会同步替换代码 imports、文档占位符和 module path，用于证明旧渲染链路未回归；新的下游采用应直接依赖 released `testkitx` helper，并限制在测试路径。

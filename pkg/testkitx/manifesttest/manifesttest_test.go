@@ -1,8 +1,11 @@
 package manifesttest_test
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ZoneCNH/testkitx/pkg/testkitx/manifesttest"
@@ -28,6 +31,28 @@ func TestManifestRoundTripAndValidate(t *testing.T) {
 	}
 	if decoded.Module != "github.com/ZoneCNH/testkitx" || len(decoded.Gates) != 1 || len(decoded.Evidence) != 1 {
 		t.Fatalf("unexpected decoded manifest: %+v", decoded)
+	}
+}
+
+func TestManifestChecksumRejectsWrongFilename(t *testing.T) {
+	t.Parallel()
+	manifest := manifesttest.New("github.com/ZoneCNH/testkitx", "abc123")
+	path := filepath.Join(t.TempDir(), "manifest.json")
+	if err := manifesttest.Write(path, manifest); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(data)
+	checksumPath := manifesttest.ChecksumPath(path)
+	if err := os.WriteFile(checksumPath, []byte(hex.EncodeToString(sum[:])+"  wrong.json\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	err = manifesttest.VerifyChecksum(path, checksumPath)
+	if err == nil || !strings.Contains(err.Error(), `references "wrong.json", want "manifest.json"`) {
+		t.Fatalf("expected filename mismatch, got %v", err)
 	}
 }
 

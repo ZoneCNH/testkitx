@@ -98,6 +98,9 @@ func VerifyChecksum(manifestPath string, checksumPath string) error {
 	if len(want) == 0 {
 		return fmt.Errorf("empty checksum file: %s", checksumPath)
 	}
+	if len(want) > 1 && want[1] != filepath.Base(filepath.Clean(manifestPath)) {
+		return fmt.Errorf("checksum file %s references %q, want %q", checksumPath, want[1], filepath.Base(filepath.Clean(manifestPath)))
+	}
 	expected := strings.TrimPrefix(want[0], "sha256:")
 	if len(expected) != sha256.Size*2 {
 		return fmt.Errorf("invalid sha256 in %s", checksumPath)

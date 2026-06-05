@@ -68,22 +68,18 @@
 
 ## 文档入口
 
-- [身份说明](docs/identity.md)：项目身份、模板定位和不可越界的生产约束。
+- [身份说明](docs/identity.md)：L1 测试专用能力库身份、`xlib-standard` 关系和不可越界的生产约束。
 - [当前状态](docs/current-state.md)：当前实现事实、历史 Goal 关系和验证入口。
-- [采用说明](docs/adoption.md)：下游基础库采用路径、检查清单和风险。
-- [规格](docs/spec.md)：模板能力、验收标准和可追踪性。
-- [设计](docs/design.md)：模块边界、公共 API、错误、健康检查和指标设计。
-- [API](docs/api.md)：`Config`、`Client`、typed error、health JSON 和 metrics contract。
-- [配置](docs/config.md)：显式配置、validation 和脱敏规则。
-- [生成](docs/generation.md)：从模板渲染 `foundationx` 等具体基础库。
-- [错误模型](docs/errors.md)：`ErrorKind`、`NewError`、`WrapError` 和重试语义。
-- [可观测性](docs/observability.md)：指标名、健康状态和 JSON 字段。
-- [测试策略母版](docs/test-strategy.md)：Required、Extended 和 profile-specific gates。
+- [采用说明](docs/adoption.md)：下游 test-only 采用路径、检查清单和风险。
+- [xlib-standard 同步](docs/xlib-standard-sync.md)：本次 scoped sync 的范围、排除项和验证口径。
 - [规格](docs/spec.md)：历史模板能力、验收标准和可追踪性。
 - [设计](docs/design.md)：历史模板边界、公共 API、错误、健康检查和指标设计。
 - [API](docs/api.md)：历史模板 API 与 contract 说明。
 - [配置](docs/config.md)：显式配置、validation 和脱敏规则。
 - [生成](docs/generation.md)：历史模板渲染说明；当前 L1 采用不要求下游从模板生成。
+- [错误模型](docs/errors.md)：`ErrorKind`、`NewError`、`WrapError` 和重试语义。
+- [可观测性](docs/observability.md)：指标名、健康状态和 JSON 字段。
+- [测试策略母版](docs/test-strategy.md)：Required、Extended 和 profile-specific gates。
 - [供应链](docs/supply-chain.md)：可校验 release Evidence、源码摘要、contract 指纹、依赖清单和 CI artifact。
 - [发布](docs/release.md)：`release-check`、manifest 字段和 Evidence 规则。
 

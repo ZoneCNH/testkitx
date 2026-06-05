@@ -29,6 +29,11 @@ go.work.sum
 release/manifest/latest.json
 release/manifest/latest.json.sha256
 
+# Generated Docker evidence
+release/docker/toolchain-check.md
+release/docker/toolchain-drift.md
+release/evidence/docker-toolchain-summary.json
+
 # env file
 .env
 

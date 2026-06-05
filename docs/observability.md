@@ -1,13 +1,13 @@
-# 可观测性模板
+# 可观测性
 
-## 占位符
+## 模块标识
 
 - `testkitx`
 - `testkitx`
 
 ## 指标
 
-使用 `contracts/metrics.md` 中的 metrics contract。模板内置的最小指标包括：
+使用 `contracts/metrics.md` 中的 metrics contract。当前仓库内置的最小指标包括：
 
 - `client_created_total`
 - `client_closed_total`
@@ -19,7 +19,7 @@
 - `client_retries_total`
 - `client_inflight`
 
-生命周期指标由 `New`、`Close` 和 `HealthCheck` 直接记录；请求、耗时、重试和 inflight 指标作为生成具体库后的扩展 contract。
+生命周期指标由 `New`、`Close` 和 `HealthCheck` 直接记录；请求、耗时、重试和 inflight 指标作为历史模板回归或下游生产库自有扩展 contract。
 
 ## 健康检查
 
@@ -38,4 +38,4 @@
 
 只能记录脱敏配置。不得记录原始凭据或生产连接材料。
 
-本模板不得依赖 `x.go`。
+本仓库不得依赖 `x.go`。

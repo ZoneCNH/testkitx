@@ -99,9 +99,22 @@ func validateChecks(checks map[string]string, requirePassed bool) []string {
 			failures = append(failures, "checks."+name+" is required")
 			continue
 		}
+		if !validCheckStatus(status) {
+			failures = append(failures, fmt.Sprintf("checks.%s has invalid status %q", name, status))
+			continue
+		}
 		if requirePassed && status != "passed" {
 			failures = append(failures, fmt.Sprintf("checks.%s must be passed, got %q", name, status))
 		}
 	}
 	return failures
+}
+
+func validCheckStatus(status string) bool {
+	switch status {
+	case "passed", "failed", "skipped", "unknown":
+		return true
+	default:
+		return false
+	}
 }

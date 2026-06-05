@@ -1,6 +1,6 @@
-# 配置模板
+# 配置
 
-## 占位符
+## 模块标识
 
 - `testkitx`
 - `github.com/ZoneCNH/testkitx`
@@ -15,6 +15,6 @@
 - `contracts/config.schema.json` 的 `name`、`timeout_ms` 和 `secret` 必须与 `Config.Name`、`Config.Timeout` 和 `Config.Secret` 保持映射一致。
 - 脱敏后的配置可以安全用于日志、Evidence 和发布说明。
 
-生成的库可以在文档中说明由调用方拥有的配置层执行显式加载，然后只接收生成后的 `Config`。
+调用方可以在自身文档中说明由调用方拥有的配置层执行显式加载，然后只把构造后的 `Config` 传入本模块或历史渲染 fixture。
 
-本模板不得依赖 `x.go`。
+本仓库不得依赖 `x.go`。

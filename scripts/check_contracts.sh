@@ -7,6 +7,8 @@ REQUIRED_FILES=(
   "contracts/config.schema.json"
   "contracts/health.schema.json"
   "contracts/error.schema.json"
+  "contracts/docker-toolchain.schema.json"
+  "contracts/downstream-adoption-proof.schema.json"
   "contracts/metrics.md"
 )
 

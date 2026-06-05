@@ -1,6 +1,6 @@
-# 发布模板
+# 发布门禁
 
-## 占位符
+## 模块标识
 
 - `testkitx`
 - `github.com/ZoneCNH/testkitx`
@@ -19,7 +19,7 @@
 GOWORK=off make release-check
 ```
 
-`GOWORK=off` 用于证明模板不依赖父级 workspace。
+`GOWORK=off` 用于证明仓库不依赖父级 workspace。
 
 发布前的最终入口是：
 
@@ -122,7 +122,7 @@ Extended Evidence 推荐额外记录：
 - `CHECK_STATUS=passed GOWORK=off make evidence`
 - `RELEASE_EVIDENCE_REQUIRE_PASSED=1 GOWORK=off make release-evidence-check`
 
-这一步用于证明模板替换、包目录迁移、imports、contracts、边界检查和生成后 release Evidence 都能在下游库中独立工作。
+这一步用于证明历史模板替换、包目录迁移、imports、contracts、边界检查和生成后 release Evidence 都能在临时下游库中独立工作。
 
 ## 规则
 

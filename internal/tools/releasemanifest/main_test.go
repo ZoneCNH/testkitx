@@ -206,6 +206,42 @@ func TestRunCLIVerifyRejectsChecksumMismatch(t *testing.T) {
 	}
 }
 
+func TestRunCLIVerifyRejectsChecksumFilenameMismatch(t *testing.T) {
+	t.Setenv("GOWORK", "off")
+	t.Setenv("VERSION", "v1.2.3")
+	t.Setenv("CHECK_STATUS", "passed")
+	chdir(t, releaseManifestFixtureRepo(t))
+
+	outPath := filepath.Join(t.TempDir(), "latest.json")
+	var generateStdout bytes.Buffer
+	var generateStderr bytes.Buffer
+	if code := runCLI("releasemanifest", []string{"-out", outPath}, &generateStdout, &generateStderr); code != 0 {
+		t.Fatalf("runCLI generate exit code = %d, want 0; stderr: %s", code, generateStderr.String())
+	}
+
+	manifestData, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(manifestData)
+	if err := os.WriteFile(manifestChecksumPath(outPath), []byte(hex.EncodeToString(sum[:])+"  wrong.json\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runCLI("releasemanifest", []string{"-verify", outPath, "-require-passed"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("runCLI verify exit code = %d, want 1; stdout: %s; stderr: %s", code, stdout.String(), stderr.String())
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout = %q, want empty", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), `references "wrong.json", want "latest.json"`) {
+		t.Fatalf("stderr = %q, want filename mismatch", stderr.String())
+	}
+}
+
 func TestRunCLIVerifyReportsDrift(t *testing.T) {
 	t.Setenv("GOWORK", "off")
 	t.Setenv("CHECK_STATUS", "passed")
@@ -293,6 +329,8 @@ func TestRunCLIVerifyRequiresCleanTree(t *testing.T) {
 }
 
 func TestRunCLIHelpReturnsSuccess(t *testing.T) {
+	t.Parallel()
+
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 
@@ -309,6 +347,8 @@ func TestRunCLIHelpReturnsSuccess(t *testing.T) {
 }
 
 func TestRunCLIRejectsUnknownFlag(t *testing.T) {
+	t.Parallel()
+
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 
@@ -325,6 +365,8 @@ func TestRunCLIRejectsUnknownFlag(t *testing.T) {
 }
 
 func TestPrintCLIMessageReportsWriterFailure(t *testing.T) {
+	t.Parallel()
+
 	if code := cliutil.PrintCLIStatus(errorWriter{}, "ok\n"); code != 1 {
 		t.Fatalf("printCLIStatus exit code = %d, want 1", code)
 	}

@@ -2,15 +2,15 @@
 
 ## 架构
 
-生成的库是独立 Go module。公共 API 位于 `pkg/testkitx`，内部辅助代码位于 `internal/`，contracts 位于 `contracts/`，运行 Evidence 位于 `release/manifest/`。`scripts/render_template.sh` 是模板到具体基础库的唯一内置渲染入口。
+`testkitx` 当前是独立 Go module 的 L1 测试专用能力库。公共 API 位于 `pkg/testkitx`，内部辅助代码位于 `internal/`，contracts 位于 `contracts/`，运行 Evidence 位于 `release/manifest/`。`scripts/render_template.sh` 保留为历史模板兼容和 integration regression 入口，不是新的下游采用方式。
 
 ## 公共 API
 
-模板暴露 `Config`、`SanitizedConfig`、`Client`、`New`、`Close`、`Option`、`HealthCheck`、`Error`、`NewError`、`WrapError`、`IsKind`、`Metrics`、`NoopMetrics`、指标常量、`ModuleName` 和 `Version`。
+核心兼容 API 暴露 `Config`、`SanitizedConfig`、`Client`、`New`、`Close`、`Option`、`HealthCheck`、`Error`、`NewError`、`WrapError`、`IsKind`、`Metrics`、`NoopMetrics`、指标常量、`ModuleName` 和 `Version`。L1 helper 能力通过 `assertx`、`golden`、`contract`、`fixture`、`harness`、`clocktest`、`obstest`、`leaktest`、`boundarytest`、`manifesttest` 和 `repotest` 等子包提供。
 
 ## 配置
 
-调用方必须显式传入配置。生成的库不得隐式读取 `x.go` 生产密钥路径。`Validate` 使用稳定 validation error 表达缺失字段和负数 timeout，`Sanitize` 只返回可安全记录的脱敏视图。`contracts/config.schema.json` 使用外部字段 `timeout_ms`，并通过 contract 回归测试锁定到 `Config.Timeout`。
+调用方必须显式传入配置。本仓库和历史渲染 fixture 都不得隐式读取 `x.go` 生产密钥路径。`Validate` 使用稳定 validation error 表达缺失字段和负数 timeout，`Sanitize` 只返回可安全记录的脱敏视图。`contracts/config.schema.json` 使用外部字段 `timeout_ms`，并通过 contract 回归测试锁定到 `Config.Timeout`。
 
 ## 错误模型
 
@@ -22,12 +22,12 @@
 
 ## 指标
 
-指标通过钩子注入，默认使用无操作实现。模板锁定 client 生命周期、错误、健康检查、请求、重试和 inflight 指标名称，具体列表以 `contracts/metrics.md` 和 `pkg/testkitx` 指标常量为准。
+指标通过钩子注入，默认使用无操作实现。仓库锁定 client 生命周期、错误、健康检查、请求、重试和 inflight 指标名称，具体列表以 `contracts/metrics.md` 和 `pkg/testkitx` 指标常量为准。
 
 ## 测试
 
-模板要求为配置校验、脱敏、客户端生命周期、健康检查和内部辅助代码提供单元测试与竞态测试。
+仓库要求为配置校验、脱敏、客户端生命周期、健康检查、L1 helper 和内部辅助代码提供单元测试与竞态测试。
 
 ## 发布
 
-发布前必须通过 Harness Gate，并生成 `release/manifest/latest.json` 与 `release/manifest/latest.json.sha256`。这两个文件都是 release Evidence artifact，不提交到源码历史；仓库只提交 `release/manifest/template.json`。`make release-check` 会先运行 CI 和 integration gate，再以 `CHECK_STATUS=passed` 生成 manifest 与 sidecar checksum；manifest 记录实际执行 gate 的 `commit`、`generated_by`、`go_version` 和 `tree_state`。integration gate 会渲染临时 `foundationx` 并运行测试，防止模板替换链路回归。
+发布前必须通过 Harness Gate，并生成 `release/manifest/latest.json` 与 `release/manifest/latest.json.sha256`。这两个文件都是 release Evidence artifact，不提交到源码历史；仓库只提交 `release/manifest/template.json`。`make release-check` 会先运行 CI 和 integration gate，再以 `CHECK_STATUS=passed` 生成 manifest 与 sidecar checksum；manifest 记录实际执行 gate 的 `commit`、`generated_by`、`go_version` 和 `tree_state`。integration gate 会渲染临时 `foundationx` 并运行测试，防止历史模板替换链路回归。

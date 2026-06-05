@@ -24,6 +24,8 @@ type objectSchema struct {
 }
 
 func TestErrorKindContractMatchesPublicConstants(t *testing.T) {
+	t.Parallel()
+
 	schema := readSchema(t, "error.schema.json")
 
 	expected := sortedStrings(
@@ -99,6 +101,53 @@ func TestMetricsContractDocumentsPublicConstants(t *testing.T) {
 		if !strings.Contains(text, "`"+metric+"`") {
 			t.Fatalf("metrics contract does not document %q", metric)
 		}
+	}
+}
+
+func TestDockerToolchainContractDocumentsEvidenceFields(t *testing.T) {
+	t.Parallel()
+	schema := readSchema(t, "docker-toolchain.schema.json")
+
+	requireFields(
+		t,
+		schema.Required,
+		"enabled",
+		"contract_version",
+		"go_version",
+		"golangci_lint_version",
+		"govulncheck_version",
+		"buildkit_required",
+		"cache_mounts",
+		"validated_by",
+		"workflow_run_id",
+		"artifact_name",
+		"artifact_url",
+	)
+}
+
+func TestDownstreamAdoptionProofContractIsTestOnly(t *testing.T) {
+	t.Parallel()
+	schema := readSchema(t, "downstream-adoption-proof.schema.json")
+
+	requireFields(
+		t,
+		schema.Required,
+		"schema_version",
+		"source_repo",
+		"source_commit",
+		"downstream_repo",
+		"downstream_commit",
+		"mode",
+		"adoption_paths",
+		"production_import_boundary",
+		"gate_outputs",
+		"rollback",
+	)
+
+	expectedModes := sortedStrings("dry-run", "fixture-only", "test-only")
+	actualModes := sortedStrings(schema.Properties["mode"].Enum...)
+	if !reflect.DeepEqual(actualModes, expectedModes) {
+		t.Fatalf("downstream adoption modes drift:\nactual:   %#v\nexpected: %#v", actualModes, expectedModes)
 	}
 }
 

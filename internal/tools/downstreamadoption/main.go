@@ -201,4 +201,3 @@ func requireHexString(failures *[]string, field string, value string, byteSize i
 		*failures = append(*failures, field+" must be valid hex")
 	}
 }
-
