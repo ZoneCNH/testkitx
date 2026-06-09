@@ -331,3 +331,4 @@ func TestHealthCheckDeadlineBelowTimeout(t *testing.T) {
 		t.Fatalf("expected unhealthy with expired deadline, got %s", status.Status)
 	}
 }
+
