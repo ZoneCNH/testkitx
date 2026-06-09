@@ -30,3 +30,9 @@ func TestCheckDetectsLiveGoroutine(t *testing.T) {
 	close(release)
 }
 
+func TestCheckLeakRegistersCleanup(t *testing.T) {
+	// CheckLeak registers a t.Cleanup that runs after the test.
+	// This test verifies CheckLeak doesn't panic and the cleanup runs.
+	leaktest.CheckLeak(t)
+}
+

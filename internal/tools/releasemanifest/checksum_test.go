@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -130,6 +131,150 @@ replace example.com/dep => ./dep
 	}
 	if !foundReplace {
 		t.Fatalf("modules = %+v, want replace metadata for example.com/dep", modules)
+	}
+}
+
+func TestReadManifestChecksumRejectsEmptyFile(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "empty.json.sha256")
+	os.WriteFile(path, []byte(""), 0o644)
+	_, err := readManifestChecksum(path, "empty.json")
+	if err == nil {
+		t.Fatal("expected error for empty checksum file")
+	}
+}
+
+func TestReadManifestChecksumRejectsShortDigest(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "short.json.sha256")
+	os.WriteFile(path, []byte("abcd1234  short.json\n"), 0o644)
+	_, err := readManifestChecksum(path, "short.json")
+	if err == nil {
+		t.Fatal("expected error for short digest")
+	}
+}
+
+func TestReadManifestChecksumRejectsInvalidHex(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "bad.json.sha256")
+	badHex := strings.Repeat("z0", 32)
+	os.WriteFile(path, []byte(badHex+"  bad.json\n"), 0o644)
+	_, err := readManifestChecksum(path, "bad.json")
+	if err == nil {
+		t.Fatal("expected error for invalid hex")
+	}
+}
+
+func TestReadManifestChecksumRejectsWrongFilename(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "manifest.json.sha256")
+	validHex := strings.Repeat("ab", 32)
+	os.WriteFile(path, []byte(validHex+"  wrong.json\n"), 0o644)
+	_, err := readManifestChecksum(path, "manifest.json")
+	if err == nil {
+		t.Fatal("expected error for wrong filename")
+	}
+}
+
+func TestReadManifestChecksumAcceptsSHA256Prefix(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "prefixed.json.sha256")
+	validHex := strings.Repeat("ab", 32)
+	os.WriteFile(path, []byte("sha256:"+validHex+"  prefixed.json\n"), 0o644)
+	got, err := readManifestChecksum(path, "prefixed.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != validHex {
+		t.Fatalf("checksum = %q, want %q", got, validHex)
+	}
+}
+
+func TestReadManifestChecksumRejectsNonexistentFile(t *testing.T) {
+	t.Parallel()
+	_, err := readManifestChecksum("/nonexistent/path.json.sha256", "path.json")
+	if err == nil {
+		t.Fatal("expected error for nonexistent file")
+	}
+}
+
+func TestWriteManifestCreatesDirectory(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "sub", "dir", "manifest.json")
+	manifest := Manifest{Module: "test", Version: "v0.1.0"}
+	if err := writeManifest(path, manifest); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), `"module": "test"`) {
+		t.Fatalf("manifest content = %q, want module field", string(data))
+	}
+}
+
+func TestContainsReturnsFalseForMissingValue(t *testing.T) {
+	t.Parallel()
+	if contains([]string{"a", "b", "c"}, "d") {
+		t.Fatal("contains([a,b,c], d) = true, want false")
+	}
+}
+
+func TestContainsReturnsTrueForPresentValue(t *testing.T) {
+	t.Parallel()
+	if !contains([]string{"a", "b", "c"}, "b") {
+		t.Fatal("contains([a,b,c], b) = false, want true")
+	}
+}
+
+func TestRequireNonEmptyAppendsWhenEmpty(t *testing.T) {
+	t.Parallel()
+	var failures []string
+	requireNonEmpty(&failures, "field", "  ")
+	if len(failures) != 1 || !strings.Contains(failures[0], "field is required") {
+		t.Fatalf("failures = %v, want 'field is required'", failures)
+	}
+}
+
+func TestRequireNonEmptySkipsWhenNonEmpty(t *testing.T) {
+	t.Parallel()
+	var failures []string
+	requireNonEmpty(&failures, "field", "value")
+	if len(failures) != 0 {
+		t.Fatalf("failures = %v, want empty", failures)
+	}
+}
+
+func TestFirstLineHandlesMultiline(t *testing.T) {
+	t.Parallel()
+	got := firstLine("first\nsecond\nthird")
+	if got != "first" {
+		t.Fatalf("firstLine = %q, want %q", got, "first")
+	}
+}
+
+func TestFirstLineHandlesSingleLine(t *testing.T) {
+	t.Parallel()
+	got := firstLine("only")
+	if got != "only" {
+		t.Fatalf("firstLine = %q, want %q", got, "only")
+	}
+}
+
+func TestEnvDefaultReturnsEnvValue(t *testing.T) {
+	t.Setenv("TESTKITX_TEST_ENV", "from_env")
+	got := envDefault("TESTKITX_TEST_ENV", "fallback")
+	if got != "from_env" {
+		t.Fatalf("envDefault = %q, want %q", got, "from_env")
+	}
+}
+
+func TestEnvDefaultReturnsFallback(t *testing.T) {
+	t.Parallel()
+	got := envDefault("TESTKITX_UNSET_VAR_xyz", "fallback")
+	if got != "fallback" {
+		t.Fatalf("envDefault = %q, want %q", got, "fallback")
 	}
 }
 

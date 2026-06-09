@@ -196,3 +196,20 @@ func TestWriteFileMkdirAllError(t *testing.T) {
 		t.Fatal("expected error for impossible directory")
 	}
 }
+
+func TestWriteFileSimpleFilename(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	path := filepath.Join(dir, "evidence.json")
+	run := validRun()
+	if err := WriteFile(path, run); err != nil {
+		t.Fatalf("WriteFile with simple filename: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+	if len(data) == 0 {
+		t.Fatal("expected non-empty evidence file")
+	}
+}
