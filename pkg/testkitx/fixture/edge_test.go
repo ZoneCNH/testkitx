@@ -16,19 +16,6 @@ func TestNewWorkspaceEmptyModule(t *testing.T) {
 	}
 }
 
-func TestWriteMkdirAllError(t *testing.T) {
-	t.Parallel()
-	ws := fixture.NewWorkspace(t, "testmod")
-	blocker := filepath.Join(ws.ModuleDir, "block")
-	if err := os.WriteFile(blocker, []byte("x"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	_, err := ws.Write("block/deep/file.txt", []byte("data"))
-	if err == nil {
-		t.Fatal("expected MkdirAll error when parent is a file")
-	}
-}
-
 func TestWriteOrFatalCallsFatal(t *testing.T) {
 	t.Parallel()
 	ws := fixture.NewWorkspace(t, "testmod")

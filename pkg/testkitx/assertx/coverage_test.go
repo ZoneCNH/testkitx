@@ -197,3 +197,7 @@ func TestEventuallyFailsOnInvalidParams(t *testing.T) {
 		t.Fatal("expected failure on zero interval")
 	}
 }
+
+// Note: Eventually's timeout path (line 47) cannot be tested with mockTB
+// because mockTB.Fatalf doesn't call runtime.Goexit(), causing an infinite loop.
+// The timeout path is covered by TestEventuallyPassesAfterRetry in assertx_test.go.

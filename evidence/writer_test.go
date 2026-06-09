@@ -3,6 +3,7 @@ package evidence
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -157,7 +158,6 @@ func validRun() Run {
 	}
 }
 
-
 func TestWriteFileError(t *testing.T) {
 	t.Parallel()
 	err := WriteFile("/nonexistent\x00dir/evidence.json", Run{Suite: "test"})
@@ -190,7 +190,6 @@ func TestWriteFileCreatesDir(t *testing.T) {
 func TestWriteFileMkdirAllError(t *testing.T) {
 	t.Parallel()
 	run := validRun()
-	// Use an invalid path where MkdirAll will fail.
 	err := WriteFile("/dev/null/impossible/evidence.json", run)
 	if err == nil {
 		t.Fatal("expected error for impossible directory")
@@ -211,5 +210,42 @@ func TestWriteFileSimpleFilename(t *testing.T) {
 	}
 	if len(data) == 0 {
 		t.Fatal("expected non-empty evidence file")
+	}
+}
+
+// failingWriter always returns an error on Write.
+type failingWriter struct{}
+
+func (failingWriter) Write(p []byte) (int, error) {
+	return 0, errors.New("write failed")
+}
+
+func TestWriteFileCreateError(t *testing.T) {
+	t.Parallel()
+	// /dev/null is not a directory, so os.Create("/dev/null/sub/file") fails.
+	run := validRun()
+	err := WriteFile("/dev/null/sub/evidence.json", run)
+	if err == nil {
+		t.Fatal("expected error creating file under /dev/null")
+	}
+}
+
+func TestWriteFileEncoderError(t *testing.T) {
+	t.Parallel()
+	// Write to a file then close the read end of a pipe to cause encoder error.
+	// Use os.CreateTemp to get a real file, then overwrite the writer.
+	dir := t.TempDir()
+	path := filepath.Join(dir, "evidence.json")
+	run := validRun()
+	// Create the file so MkdirAll is not needed.
+	os.WriteFile(path, []byte{}, 0o644)
+
+	// WriteFile creates a new file with os.Create, so we can't easily make
+	// the encoder fail after Create succeeds. Instead test the
+	// NewWriter + Write path directly with a failing writer.
+	w := NewWriter(failingWriter{})
+	err := w.Write(run)
+	if err == nil {
+		t.Fatal("expected encoder error with failing writer")
 	}
 }

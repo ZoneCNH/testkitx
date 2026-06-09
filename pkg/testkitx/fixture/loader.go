@@ -2,6 +2,7 @@ package fixture
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -13,12 +14,25 @@ import (
 // test file. If the file does not exist the test fails immediately.
 func Load(t *testing.T, path string) []byte {
 	t.Helper()
-	full := resolvePath(t, path)
-	data, err := os.ReadFile(full)
+	data, err := LoadE(path)
 	if err != nil {
-		t.Fatalf("load fixture %s: %v", full, err)
+		t.Fatalf("load fixture: %v", err)
 	}
 	return data
+}
+
+// LoadE reads a fixture file, resolving the path relative to the caller's
+// file. Returns an error instead of failing the test.
+func LoadE(path string) ([]byte, error) {
+	full, err := resolvePathE(2, path)
+	if err != nil {
+		return nil, err
+	}
+	data, err := os.ReadFile(full)
+	if err != nil {
+		return nil, fmt.Errorf("load fixture %s: %w", full, err)
+	}
+	return data, nil
 }
 
 // LoadJSON reads the fixture file at path and unmarshals it into v.
@@ -32,25 +46,47 @@ func LoadJSON(t *testing.T, path string, v any) {
 	}
 }
 
+// LoadJSONE reads and unmarshals a fixture file. Returns an error instead
+// of failing the test.
+func LoadJSONE(path string, v any) error {
+	data, err := LoadE(path)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(data, v); err != nil {
+		return fmt.Errorf("unmarshal fixture %s: %w", path, err)
+	}
+	return nil
+}
+
 // Dir returns the absolute path to the testdata/fixtures directory relative
 // to the calling test file's package. This is useful when you need to build
 // paths programmatically.
 func Dir(t *testing.T) string {
 	t.Helper()
-	_, filename, _, ok := runtime.Caller(1)
-	if !ok {
-		t.Fatal("fixture.Dir: unable to determine caller file")
+	dir, err := DirE()
+	if err != nil {
+		t.Fatalf("fixture.Dir: %v", err)
 	}
-	return filepath.Join(filepath.Dir(filename), "testdata", "fixtures")
+	return dir
 }
 
-// resolvePath finds the absolute path for a fixture relative to the caller's
-// test file location.
-func resolvePath(t *testing.T, path string) string {
-	t.Helper()
+// DirE returns the testdata/fixtures directory path. Returns an error
+// instead of failing the test.
+func DirE() (string, error) {
 	_, filename, _, ok := runtime.Caller(2)
 	if !ok {
-		t.Fatal("fixture: unable to determine caller file")
+		return "", fmt.Errorf("unable to determine caller file")
 	}
-	return filepath.Join(filepath.Dir(filename), "testdata", "fixtures", filepath.Clean(path))
+	return filepath.Join(filepath.Dir(filename), "testdata", "fixtures"), nil
+}
+
+// resolvePathE finds the absolute path for a fixture relative to the
+// test file at the given caller skip depth.
+func resolvePathE(skip int, path string) (string, error) {
+	_, filename, _, ok := runtime.Caller(skip)
+	if !ok {
+		return "", fmt.Errorf("unable to determine caller file")
+	}
+	return filepath.Join(filepath.Dir(filename), "testdata", "fixtures", filepath.Clean(path)), nil
 }
