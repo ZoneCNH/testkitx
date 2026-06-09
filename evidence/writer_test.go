@@ -156,3 +156,43 @@ func validRun() Run {
 		Cases:     []Case{{ID: "common.lifecycle.start", Name: "start", Status: StatusPass}},
 	}
 }
+
+
+func TestWriteFileError(t *testing.T) {
+	t.Parallel()
+	err := WriteFile("/nonexistent\x00dir/evidence.json", Run{Suite: "test"})
+	if err == nil {
+		t.Fatal("expected error for invalid path")
+	}
+}
+
+func TestWriteFileCreatesDir(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "deep", "nested", "evidence.json")
+	run := Run{
+		Suite:     "test",
+		StartedAt: time.Now().Add(-time.Second),
+		EndedAt:   time.Now(),
+		Cases:     []Case{{ID: "1", Name: "test", Status: StatusPass}},
+	}
+	if err := WriteFile(path, run); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+	if len(data) == 0 {
+		t.Fatal("expected non-empty evidence file")
+	}
+}
+
+func TestWriteFileMkdirAllError(t *testing.T) {
+	t.Parallel()
+	run := validRun()
+	// Use an invalid path where MkdirAll will fail.
+	err := WriteFile("/dev/null/impossible/evidence.json", run)
+	if err == nil {
+		t.Fatal("expected error for impossible directory")
+	}
+}

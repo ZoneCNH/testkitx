@@ -3,6 +3,7 @@ package testkitx
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 )
@@ -110,5 +111,78 @@ func TestCloseRejectsZeroValueClient(t *testing.T) {
 	}
 	if !IsKind(err, ErrorKindValidation) {
 		t.Fatalf("expected validation error, got %T %[1]v", err)
+	}
+}
+
+func TestNewRejectsNilContext(t *testing.T) {
+	t.Parallel()
+	_, err := New(nil, Config{Name: "testkitx"}) //nolint:staticcheck
+	if err == nil {
+		t.Fatal("expected nil context to fail")
+	}
+	if !IsKind(err, ErrorKindValidation) {
+		t.Fatalf("expected validation error, got %T %[1]v", err)
+	}
+}
+
+func TestCloseRejectsNilContext(t *testing.T) {
+	t.Parallel()
+	client, err := New(context.Background(), Config{Name: "testkitx"})
+	if err != nil {
+		t.Fatalf("new client: %v", err)
+	}
+	err = client.Close(nil) //nolint:staticcheck
+	if err == nil {
+		t.Fatal("expected nil close context to fail")
+	}
+	if !IsKind(err, ErrorKindValidation) {
+		t.Fatalf("expected validation error, got %T %[1]v", err)
+	}
+}
+
+func TestCloseRejectsExpiredContext(t *testing.T) {
+	t.Parallel()
+	client, err := New(context.Background(), Config{Name: "testkitx"})
+	if err != nil {
+		t.Fatalf("new client: %v", err)
+	}
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+	err = client.Close(ctx)
+	if err == nil {
+		t.Fatal("expected expired close context to fail")
+	}
+	if !IsKind(err, ErrorKindTimeout) {
+		t.Fatalf("expected timeout error, got %T %[1]v", err)
+	}
+}
+
+func TestNewWithValidConfigSucceeds(t *testing.T) {
+	t.Parallel()
+	metrics := &recordingMetrics{}
+	client, err := New(context.Background(), Config{Name: "testkitx"}, WithMetrics(metrics))
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	if client == nil {
+		t.Fatal("expected non-nil client")
+	}
+	if !metrics.hasCounter(MetricClientCreatedTotal) {
+		t.Fatal("expected creation metric")
+	}
+}
+
+func TestRecordErrorMetricWithNilMetrics(t *testing.T) {
+	// recordErrorMetric with nil metrics should not panic.
+	recordErrorMetric(nil, "test", fmt.Errorf("err"))
+}
+
+func TestRecordErrorMetricWithRealError(t *testing.T) {
+	t.Parallel()
+	metrics := &recordingMetrics{}
+	err := NewError(ErrorKindTimeout, "op", "msg", true)
+	recordErrorMetric(metrics, "test", err)
+	if !metrics.counterWithLabel(MetricClientErrorsTotal, "kind", string(ErrorKindTimeout)) {
+		t.Fatalf("expected timeout error metric, got %#v", metrics.counters)
 	}
 }

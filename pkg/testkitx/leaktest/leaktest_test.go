@@ -29,3 +29,4 @@ func TestCheckDetectsLiveGoroutine(t *testing.T) {
 	}
 	close(release)
 }
+

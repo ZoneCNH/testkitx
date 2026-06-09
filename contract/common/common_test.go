@@ -82,3 +82,45 @@ func (m fakeMetrics) Metric(name string) (float64, bool) {
 	value, ok := m[name]
 	return value, ok
 }
+
+func TestErrorWithOp(t *testing.T) {
+	t.Parallel()
+	e := Error{Kind: "validation", Op: "new", Message: "name is required"}
+	got := e.Error()
+	if got != "validation: new: name is required" {
+		t.Fatalf("unexpected error string: %q", got)
+	}
+}
+
+func TestErrorWithoutOp(t *testing.T) {
+	t.Parallel()
+	e := Error{Kind: "validation", Message: "bad input"}
+	got := e.Error()
+	if got != "validation: bad input" {
+		t.Fatalf("unexpected error string: %q", got)
+	}
+}
+
+func TestObservabilityMetricNotFound(t *testing.T) {
+	t.Parallel()
+	probe := &probeT{}
+	RunObservabilityMetrics(probe, fakeMetrics{}, "nonexistent")
+	if !probe.failed {
+		t.Fatal("expected failure when metric not found")
+	}
+}
+
+func TestObservabilityMetricNegative(t *testing.T) {
+	t.Parallel()
+	probe := &probeT{}
+	RunObservabilityMetrics(probe, fakeMetrics{"cpu": -1.0}, "cpu")
+	if !probe.failed {
+		t.Fatal("expected failure for negative metric")
+	}
+}
+
+type probeT struct{ failed bool }
+
+func (p *probeT) Helper()               {}
+func (p *probeT) Fatalf(string, ...any) { p.failed = true }
+func (p *probeT) Name() string          { return "probe" }

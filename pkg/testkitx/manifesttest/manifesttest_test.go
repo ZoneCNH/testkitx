@@ -70,3 +70,63 @@ func TestManifestChecksumDetectsDrift(t *testing.T) {
 		t.Fatal("VerifyChecksum() succeeded after manifest drift")
 	}
 }
+
+func TestReadNonExistentFile(t *testing.T) {
+	t.Parallel()
+	_, err := manifesttest.Read("/nonexistent/manifest.json")
+	if err == nil {
+		t.Fatal("expected error for nonexistent file")
+	}
+}
+
+func TestWriteChecksumSHA256Error(t *testing.T) {
+	t.Parallel()
+	// SHA256 on nonexistent file -> WriteChecksum should fail
+	err := manifesttest.WriteChecksum("/nonexistent/manifest.json", "")
+	if err == nil {
+		t.Fatal("expected error for nonexistent manifest")
+	}
+}
+
+func TestVerifyChecksumEmptyFile(t *testing.T) {
+	t.Parallel()
+	manifest := manifesttest.New("github.com/ZoneCNH/testkitx", "abc123")
+	path := filepath.Join(t.TempDir(), "manifest.json")
+	if err := manifesttest.Write(path, manifest); err != nil {
+		t.Fatal(err)
+	}
+	checksumPath := manifesttest.ChecksumPath(path)
+	os.WriteFile(checksumPath, []byte(""), 0o644)
+	err := manifesttest.VerifyChecksum(path, checksumPath)
+	if err == nil || !strings.Contains(err.Error(), "empty checksum file") {
+		t.Fatalf("expected empty checksum error, got %v", err)
+	}
+}
+
+func TestVerifyChecksumInvalidHex(t *testing.T) {
+	t.Parallel()
+	manifest := manifesttest.New("github.com/ZoneCNH/testkitx", "abc123")
+	path := filepath.Join(t.TempDir(), "manifest.json")
+	if err := manifesttest.Write(path, manifest); err != nil {
+		t.Fatal(err)
+	}
+	checksumPath := manifesttest.ChecksumPath(path)
+	os.WriteFile(checksumPath, []byte(strings.Repeat("z", 64)+"\n"), 0o644)
+	err := manifesttest.VerifyChecksum(path, checksumPath)
+	if err == nil || !strings.Contains(err.Error(), "invalid sha256") {
+		t.Fatalf("expected invalid sha256 error, got %v", err)
+	}
+}
+
+func TestVerifyChecksumNonExistentChecksumFile(t *testing.T) {
+	t.Parallel()
+	manifest := manifesttest.New("github.com/ZoneCNH/testkitx", "abc123")
+	path := filepath.Join(t.TempDir(), "manifest.json")
+	if err := manifesttest.Write(path, manifest); err != nil {
+		t.Fatal(err)
+	}
+	err := manifesttest.VerifyChecksum(path, "/nonexistent/checksum.sha256")
+	if err == nil {
+		t.Fatal("expected error for nonexistent checksum file")
+	}
+}
