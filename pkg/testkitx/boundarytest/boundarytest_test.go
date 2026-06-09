@@ -101,3 +101,147 @@ func TestViolationStringFormatting(t *testing.T) {
 		t.Fatal("expected non-empty string")
 	}
 }
+
+func TestScanNonexistentDir(t *testing.T) {
+	t.Parallel()
+	v, err := boundarytest.Scan(boundarytest.ScanConfig{
+		Dir:             "/nonexistent/dir/path",
+		ForbiddenPrefix: "testkitx",
+	})
+	if err == nil {
+		if len(v) != 0 {
+			t.Fatalf("expected no violations for nonexistent dir, got %d", len(v))
+		}
+	}
+}
+
+func TestScanEmptyDir(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	v, err := boundarytest.Scan(boundarytest.ScanConfig{
+		Dir:             dir,
+		ForbiddenPrefix: "testkitx",
+	})
+	if err != nil {
+		t.Fatalf("Scan empty dir: %v", err)
+	}
+	if len(v) != 0 {
+		t.Fatalf("expected no violations in empty dir, got %d", len(v))
+	}
+}
+
+func TestScanTestFilesExcluded(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	path := filepath.Join(root, "pkg", "prod", "prod_test.go")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(`package prod
+import "github.com/ZoneCNH/testkitx/pkg/testkitx/golden"
+var _ = golden.UpdateEnv
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	v, err := boundarytest.Scan(boundarytest.ScanConfig{
+		Dir:             root,
+		ForbiddenPrefix: "github.com/ZoneCNH/testkitx/pkg/testkitx/",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(v) != 0 {
+		t.Fatalf("test files should be excluded, got %d violations: %+v", len(v), v)
+	}
+}
+
+func TestScanTestkitDirectoryExcluded(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	path := filepath.Join(root, "testkit", "helper.go")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(`package testkit
+import "github.com/ZoneCNH/testkitx/pkg/testkitx/golden"
+var _ = golden.UpdateEnv
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	v, err := boundarytest.Scan(boundarytest.ScanConfig{
+		Dir:             root,
+		ForbiddenPrefix: "github.com/ZoneCNH/testkitx/pkg/testkitx/",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(v) != 0 {
+		t.Fatalf("testkit/ directory should be excluded, got %d violations", len(v))
+	}
+}
+
+func TestScanNoMatchingImports(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	path := filepath.Join(root, "pkg", "app", "app.go")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(`package app
+import "fmt"
+var _ = fmt.Println
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	v, err := boundarytest.Scan(boundarytest.ScanConfig{
+		Dir:             root,
+		ForbiddenPrefix: "github.com/ZoneCNH/testkitx/",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(v) != 0 {
+		t.Fatalf("no forbidden imports, got %d violations", len(v))
+	}
+}
+
+func TestScanMultipleViolations(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	for _, f := range []struct {
+		path, body string
+	}{
+		{"pkg/a/a.go", "package a\nimport \"github.com/ZoneCNH/testkitx/pkg/testkitx/golden\"\nvar _ = golden.UpdateEnv\n"},
+		{"pkg/b/b.go", "package b\nimport \"github.com/ZoneCNH/testkitx/pkg/testkitx/assertx\"\nvar _ = assertx.Failf\n"},
+	} {
+		p := filepath.Join(root, f.path)
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(f.body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	v, err := boundarytest.Scan(boundarytest.ScanConfig{
+		Dir:             root,
+		ForbiddenPrefix: "github.com/ZoneCNH/testkitx/pkg/testkitx/",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(v) != 2 {
+		t.Fatalf("expected 2 violations, got %d: %+v", len(v), v)
+	}
+}
+
+func TestScanLegacyWrapperEmptyDir(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	v, err := boundarytest.ScanProductionImports(dir, "testkitx")
+	if err != nil {
+		t.Fatalf("ScanProductionImports: %v", err)
+	}
+	if len(v) != 0 {
+		t.Fatalf("expected 0 violations, got %d", len(v))
+	}
+}
