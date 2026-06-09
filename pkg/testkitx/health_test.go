@@ -225,3 +225,22 @@ func TestHealthStatusJSONContract(t *testing.T) {
 		t.Fatalf("expected snake_case JSON fields, got %s", encoded)
 	}
 }
+
+func TestHealthCheckDeadlineAlreadyExceeded(t *testing.T) {
+	t.Parallel()
+	client, err := New(context.Background(), Config{
+		Name:    "testkitx",
+		Timeout: time.Hour,
+	})
+	if err != nil {
+		t.Fatalf("new client: %v", err)
+	}
+	// Create a context whose deadline has already passed.
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	cancel()
+
+	status := client.HealthCheck(ctx)
+	if status.Status != HealthUnhealthy {
+		t.Fatalf("expected unhealthy status, got %q", status.Status)
+	}
+}

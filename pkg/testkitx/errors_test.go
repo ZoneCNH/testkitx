@@ -118,3 +118,61 @@ func TestErrorFormatNil(t *testing.T) {
 		t.Fatalf("expected <nil>, got %q", got)
 	}
 }
+
+func TestErrorNilReceiverError(t *testing.T) {
+	var err *Error
+	if got := err.Error(); got != "" {
+		t.Fatalf("expected empty string for nil Error, got %q", got)
+	}
+}
+
+func TestErrorUnwrapNilCause(t *testing.T) {
+	t.Parallel()
+	err := NewError(ErrorKindValidation, "op", "msg", false)
+	if err.Unwrap() != nil {
+		t.Fatalf("expected nil Unwrap for error without cause")
+	}
+}
+
+func TestErrorUnwrapNilReceiver(t *testing.T) {
+	var err *Error
+	if err.Unwrap() != nil {
+		t.Fatalf("expected nil Unwrap for nil Error")
+	}
+}
+
+func TestIsKindWithNonError(t *testing.T) {
+	t.Parallel()
+	if IsKind(fmt.Errorf("plain error"), ErrorKindValidation) {
+		t.Fatal("expected false for non-Error type")
+	}
+}
+
+func TestErrorKindWithNonError(t *testing.T) {
+	t.Parallel()
+	kind := errorKind(fmt.Errorf("plain"))
+	if kind != ErrorKindInternal {
+		t.Fatalf("expected internal kind for non-Error, got %q", kind)
+	}
+}
+
+func TestErrorWithMessageAndCause(t *testing.T) {
+	t.Parallel()
+	cause := fmt.Errorf("root cause")
+	err := WrapError(ErrorKindConnection, "svc.Connect", "connection failed", true, cause)
+	if got := err.Error(); !strings.Contains(got, "connection failed") {
+		t.Fatalf("expected message in error string, got %q", got)
+	}
+	if !errors.Is(err, cause) {
+		t.Fatal("expected cause to be unwrappable")
+	}
+}
+
+func TestErrorWithOnlyCause(t *testing.T) {
+	t.Parallel()
+	cause := fmt.Errorf("root cause")
+	err := WrapError(ErrorKindInternal, "op", "", false, cause)
+	if got := err.Error(); !strings.Contains(got, "root cause") {
+		t.Fatalf("expected cause message in error string, got %q", got)
+	}
+}

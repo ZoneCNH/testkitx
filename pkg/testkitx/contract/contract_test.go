@@ -91,3 +91,40 @@ func TestEvidenceValidateRejectsMalformedHash(t *testing.T) {
 		t.Fatalf("expected sha validation failure, got %v", err)
 	}
 }
+
+func TestWriteEvidenceCreatesDirectory(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "deep", "nested", "evidence.json")
+	valid := contract.Evidence{
+		Kind:         "contract_check",
+		ContractID:   "test",
+		ContractPath: "contract.json",
+		SHA256:       strings.Repeat("a", 64),
+		Matched:      true,
+	}
+	if err := contract.WriteEvidence(path, valid); err != nil {
+		t.Fatalf("WriteEvidence: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+	if len(data) == 0 {
+		t.Fatal("expected non-empty evidence file")
+	}
+}
+
+func TestEvidenceValidateRejectsNonHexSHA(t *testing.T) {
+	t.Parallel()
+	e := contract.Evidence{
+		Kind:         "contract_check",
+		ContractID:   "x",
+		ContractPath: "p",
+		SHA256:       strings.Repeat("z", 64), // 'z' is not hex
+		Matched:      true,
+	}
+	if err := e.Validate(); err == nil || !strings.Contains(err.Error(), "sha256 is invalid") {
+		t.Fatalf("expected non-hex sha error, got %v", err)
+	}
+}
+

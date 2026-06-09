@@ -132,3 +132,51 @@ func (s fakeService) Stop(context.Context) error {
 type fakeHealth struct{}
 
 func (fakeHealth) Healthy(context.Context) error { return nil }
+
+func TestComposeStartFailsOnServiceError(t *testing.T) {
+	t.Parallel()
+	compose := NewCompose(failingService{}, failingService{startErr: true})
+	err := compose.Start(context.Background())
+	if err == nil || err.Error() != "start failed" {
+		t.Fatalf("expected start error, got %v", err)
+	}
+}
+
+func TestComposeStopFailsOnServiceError(t *testing.T) {
+	t.Parallel()
+	compose := NewCompose(failingService{}, failingService{stopErr: true})
+	if err := compose.Start(context.Background()); err != nil {
+		t.Fatalf("start: %v", err)
+	}
+	err := compose.Stop(context.Background())
+	if err == nil || err.Error() != "stop failed" {
+		t.Fatalf("expected stop error, got %v", err)
+	}
+}
+
+func TestCheckHealthNilChecker(t *testing.T) {
+	t.Parallel()
+	err := CheckHealth(context.Background(), nil)
+	if err == nil || err.Error() != "servicex: health checker is required" {
+		t.Fatalf("expected nil checker error, got %v", err)
+	}
+}
+
+type failingService struct {
+	startErr bool
+	stopErr  bool
+}
+
+func (s failingService) Start(context.Context) error {
+	if s.startErr {
+		return errors.New("start failed")
+	}
+	return nil
+}
+
+func (s failingService) Stop(context.Context) error {
+	if s.stopErr {
+		return errors.New("stop failed")
+	}
+	return nil
+}
