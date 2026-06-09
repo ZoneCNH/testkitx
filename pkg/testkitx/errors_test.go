@@ -228,3 +228,30 @@ func TestContextErrorNonDeadline(t *testing.T) {
 		t.Fatal("expected non-retryable for canceled")
 	}
 }
+
+func TestErrorNilReceiverReturnsEmpty(t *testing.T) {
+	t.Parallel()
+	var e *Error
+	if got := e.Error(); got != "" {
+		t.Fatalf("expected empty string for nil receiver, got %q", got)
+	}
+}
+
+func TestErrorMessageEmptyWithCause(t *testing.T) {
+	t.Parallel()
+	e := WrapError(ErrorKindConnection, "op", "", false, fmt.Errorf("underlying"))
+	if e.Error() != "connection: op: underlying" {
+		t.Fatalf("unexpected error string: %q", e.Error())
+	}
+}
+
+
+func TestErrorMessageEmptyWithCauseDirect(t *testing.T) {
+	t.Parallel()
+	// Construct Error directly to bypass newError which copies cause to message.
+	e := &Error{Kind: ErrorKindConnection, Op: "op", Cause: fmt.Errorf("underlying")}
+	got := e.Error()
+	if !strings.Contains(got, "underlying") {
+		t.Fatalf("expected cause in error string, got %q", got)
+	}
+}

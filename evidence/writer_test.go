@@ -190,10 +190,7 @@ func TestWriteFileCreatesDir(t *testing.T) {
 func TestWriteFileMkdirAllError(t *testing.T) {
 	t.Parallel()
 	run := validRun()
-	// Create a file where a directory is expected, so MkdirAll fails.
-	blocker := filepath.Join(t.TempDir(), "blocker")
-	os.WriteFile(blocker, []byte("x"), 0o644)
-	err := WriteFile(filepath.Join(blocker, "sub", "evidence.json"), run)
+	err := WriteFile("/dev/null/impossible/evidence.json", run)
 	if err == nil {
 		t.Fatal("expected error for impossible directory")
 	}
@@ -225,14 +222,12 @@ func (failingWriter) Write(p []byte) (int, error) {
 
 func TestWriteFileCreateError(t *testing.T) {
 	t.Parallel()
-	// Create a directory at the target path so os.Create fails.
-	dir := t.TempDir()
-	target := filepath.Join(dir, "evidence.json")
-	os.MkdirAll(target, 0o755)
+	// /dev/null is not a directory, so os.Create("/dev/null/sub/file") fails.
 	run := validRun()
-	err := WriteFile(target, run)
+	err := WriteFile("/dev/null/sub/evidence.json", run)
 	if err == nil {
-		t.Fatal("expected error when Create target is a directory")
+		t.Fatal("expected error creating file under /dev/null")
+>>>>>>> origin/main
 	}
 }
 

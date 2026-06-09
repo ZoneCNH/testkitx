@@ -222,10 +222,8 @@ func TestWriteEvidenceMkdirAllError(t *testing.T) {
 		SHA256:       strings.Repeat("a", 64),
 		Matched:      true,
 	}
-	// Create a file where a directory is expected, so MkdirAll fails.
-	blocker := filepath.Join(t.TempDir(), "blocker")
-	os.WriteFile(blocker, []byte("x"), 0o644)
-	err := contract.WriteEvidence(filepath.Join(blocker, "sub", "evidence.json"), valid)
+	// /dev/null is not a directory, MkdirAll("/dev/null/sub") should fail.
+	err := contract.WriteEvidence("/dev/null/sub/evidence.json", valid)
 	if err == nil {
 		t.Fatal("expected MkdirAll error")
 	}

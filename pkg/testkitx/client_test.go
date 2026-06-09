@@ -186,3 +186,16 @@ func TestRecordErrorMetricWithRealError(t *testing.T) {
 		t.Fatalf("expected timeout error metric, got %#v", metrics.counters)
 	}
 }
+
+
+func TestCloseNilReceiver(t *testing.T) {
+	t.Parallel()
+	var client *Client
+	err := client.Close(context.Background())
+	if err == nil {
+		t.Fatal("expected error for nil client")
+	}
+	if !IsKind(err, ErrorKindValidation) {
+		t.Fatalf("expected validation error, got %v", err)
+	}
+}

@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,34 +24,54 @@ type Evidence struct {
 
 func AssertBytes(t testing.TB, path string, actual []byte) Evidence {
 	t.Helper()
+	ev, err := CheckBytes(path, actual)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	return ev
+}
+
+// CheckBytes compares actual against the golden file at path.
+// Returns an error instead of failing the test.
+func CheckBytes(path string, actual []byte) (Evidence, error) {
 	clean := filepath.Clean(path)
 	actualHash := sha256Hex(actual)
 	if os.Getenv(UpdateEnv) == "1" {
 		if err := os.MkdirAll(filepath.Dir(clean), 0o755); err != nil {
-			t.Fatalf("create golden dir: %v", err)
+			return Evidence{}, fmt.Errorf("create golden dir: %w", err)
 		}
 		if err := os.WriteFile(clean, actual, 0o644); err != nil {
-			t.Fatalf("update golden %s: %v", clean, err)
+			return Evidence{}, fmt.Errorf("update golden %s: %w", clean, err)
 		}
-		return Evidence{Kind: "golden_check", Path: clean, Updated: true, Matched: true, ActualSHA256: actualHash}
+		return Evidence{Kind: "golden_check", Path: clean, Updated: true, Matched: true, ActualSHA256: actualHash}, nil
 	}
 	expected, err := os.ReadFile(clean)
 	if err != nil {
-		t.Fatalf("read golden %s: %v", clean, err)
+		return Evidence{}, fmt.Errorf("read golden %s: %w", clean, err)
 	}
 	if !bytes.Equal(expected, actual) {
-		t.Fatalf("golden mismatch for %s\nexpected sha256: %s\nactual sha256:   %s", clean, sha256Hex(expected), actualHash)
+		return Evidence{}, fmt.Errorf("golden mismatch for %s\nexpected sha256: %s\nactual sha256:   %s", clean, sha256Hex(expected), actualHash)
 	}
-	return Evidence{Kind: "golden_check", Path: clean, Updated: false, Matched: true, ActualSHA256: actualHash}
+	return Evidence{Kind: "golden_check", Path: clean, Updated: false, Matched: true, ActualSHA256: actualHash}, nil
 }
 
 func AssertJSON(t testing.TB, path string, value any) Evidence {
 	t.Helper()
+	ev, err := CheckJSON(path, value)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	return ev
+}
+
+// CheckJSON compares value against the golden file at path using canonical JSON.
+// Returns an error instead of failing the test.
+func CheckJSON(path string, value any) (Evidence, error) {
 	encoded, err := canonicalJSON(value)
 	if err != nil {
-		t.Fatalf("canonicalize json: %v", err)
+		return Evidence{}, fmt.Errorf("canonicalize json: %w", err)
 	}
-	return AssertBytes(t, path, encoded)
+	return CheckBytes(path, encoded)
 }
 
 func canonicalJSON(value any) ([]byte, error) {

@@ -1,6 +1,7 @@
 package golden
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,16 +16,25 @@ func UpdateEnabled() bool {
 // It is a no-op otherwise.
 func Update(t *testing.T, path string, actual []byte) {
 	t.Helper()
+	if err := WriteGolden(path, actual); err != nil {
+		t.Fatalf("%v", err)
+	}
+}
+
+// WriteGolden writes actual to the golden file at path when
+// TESTKITX_UPDATE_GOLDEN=1 is set. Returns an error instead of failing.
+func WriteGolden(path string, actual []byte) error {
 	if !UpdateEnabled() {
-		return
+		return nil
 	}
 	clean := filepath.Clean(path)
 	if err := os.MkdirAll(filepath.Dir(clean), 0o755); err != nil {
-		t.Fatalf("create golden dir: %v", err)
+		return fmt.Errorf("create golden dir: %w", err)
 	}
 	if err := os.WriteFile(clean, actual, 0o644); err != nil {
-		t.Fatalf("update golden %s: %v", path, err)
+		return fmt.Errorf("update golden %s: %w", path, err)
 	}
+	return nil
 }
 
 // Assert compares actual against the golden file at path. When

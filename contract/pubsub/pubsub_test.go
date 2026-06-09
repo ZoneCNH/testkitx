@@ -2,6 +2,8 @@ package pubsub
 
 import (
 	"context"
+	"runtime"
+	"sync"
 	"testing"
 )
 
@@ -21,6 +23,39 @@ func TestRunners(t *testing.T) {
 	}
 }
 
+func TestRunPublishSubscribeNilSub(t *testing.T) {
+	t.Parallel()
+	probe := &fatalProbeT{}
+	bus := &fakeBus{messages: make(chan Message, 1)}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer func() { recover() }()
+		RunPublishSubscribe(probe, bus, nilSubBus{})
+	}()
+	wg.Wait()
+	if !probe.failed {
+		t.Fatal("expected failure for nil subscription")
+	}
+}
+
+func TestRunRequestReplyEmptyValue(t *testing.T) {
+	t.Parallel()
+	probe := &fatalProbeT{}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer func() { recover() }()
+		RunRequestReply(probe, emptyReplyBus{})
+	}()
+	wg.Wait()
+	if !probe.failed {
+		t.Fatal("expected failure for empty reply")
+	}
+}
+
 type fakeBus struct{ messages chan Message }
 
 func (b *fakeBus) Publish(_ context.Context, msg Message) error            { b.messages <- msg; return nil }
@@ -31,3 +66,20 @@ func (b *fakeBus) Request(_ context.Context, msg Message) (Message, error) {
 	msg.Value = []byte("pong")
 	return msg, nil
 }
+
+type nilSubBus struct{}
+
+func (nilSubBus) Subscribe(context.Context, string) (Subscription, error) { return nil, nil }
+func (nilSubBus) Publish(_ context.Context, _ Message) error              { return nil }
+
+type emptyReplyBus struct{}
+
+func (emptyReplyBus) Request(_ context.Context, msg Message) (Message, error) {
+	msg.Value = nil
+	return msg, nil
+}
+
+type fatalProbeT struct{ failed bool }
+
+func (p *fatalProbeT) Helper()               {}
+func (p *fatalProbeT) Fatalf(string, ...any) { p.failed = true; runtime.Goexit() }

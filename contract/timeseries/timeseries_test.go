@@ -86,3 +86,18 @@ type probeT struct{ failed bool }
 
 func (p *probeT) Helper()               {}
 func (p *probeT) Fatalf(string, ...any) { p.failed = true }
+
+func TestRunTimeSeriesNilPoints(t *testing.T) {
+	t.Parallel()
+	probe := &probeT{}
+	RunTimeSeries(probe, nilPointsStore{})
+	if !probe.failed {
+		t.Fatal("expected failure for nil points")
+	}
+}
+
+type nilPointsStore struct{ fakeStore }
+
+func (nilPointsStore) Query(context.Context, string, time.Time, time.Time) ([]Point, error) {
+	return nil, nil
+}

@@ -51,18 +51,28 @@ func (e Evidence) Validate() error {
 
 func AssertHash(t testing.TB, contractID, path, expectedSHA256 string, metadata map[string]string) Evidence {
 	t.Helper()
+	ev, err := CheckHash(contractID, path, expectedSHA256, metadata)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	return ev
+}
+
+// CheckHash verifies that the file at path has the expected SHA256 digest
+// and returns a machine-readable Evidence. Returns an error instead of
+// failing the test.
+func CheckHash(contractID, path, expectedSHA256 string, metadata map[string]string) (Evidence, error) {
 	if strings.TrimSpace(contractID) == "" {
-		t.Fatalf("contract id is required")
+		return Evidence{}, fmt.Errorf("contract id is required")
 	}
 	actual, err := FileSHA256(path)
 	if err != nil {
-		t.Fatalf("hash contract %s: %v", path, err)
+		return Evidence{}, fmt.Errorf("hash contract %s: %w", path, err)
 	}
-	matched := actual == expectedSHA256
-	if !matched {
-		t.Fatalf("contract %s hash mismatch: got %s want %s", contractID, actual, expectedSHA256)
+	if actual != expectedSHA256 {
+		return Evidence{}, fmt.Errorf("contract %s hash mismatch: got %s want %s", contractID, actual, expectedSHA256)
 	}
-	return Evidence{Kind: "contract_check", ContractID: contractID, ContractPath: filepath.Clean(path), SHA256: actual, Matched: true, Metadata: copyMetadata(metadata)}
+	return Evidence{Kind: "contract_check", ContractID: contractID, ContractPath: filepath.Clean(path), SHA256: actual, Matched: true, Metadata: copyMetadata(metadata)}, nil
 }
 
 func WriteEvidence(path string, evidence Evidence) error {

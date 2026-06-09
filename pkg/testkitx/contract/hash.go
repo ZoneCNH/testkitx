@@ -3,6 +3,7 @@ package contract
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -55,11 +56,20 @@ func HashDir(dir string) (string, error) {
 // The test fails if the hashes do not match.
 func AssertFileHash(t *testing.T, path, expected string) {
 	t.Helper()
+	if err := VerifyFileHash(path, expected); err != nil {
+		t.Fatalf("%v", err)
+	}
+}
+
+// VerifyFileHash checks that the file at path has the expected SHA256 digest.
+// Returns an error instead of failing the test.
+func VerifyFileHash(path, expected string) error {
 	actual, err := HashFile(path)
 	if err != nil {
-		t.Fatalf("hash file %s: %v", path, err)
+		return fmt.Errorf("hash file %s: %w", path, err)
 	}
 	if !strings.EqualFold(actual, expected) {
-		t.Fatalf("hash mismatch for %s: got %s want %s", path, actual, expected)
+		return fmt.Errorf("hash mismatch for %s: got %s want %s", path, actual, expected)
 	}
+	return nil
 }

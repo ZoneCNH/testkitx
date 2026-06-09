@@ -14,6 +14,7 @@ import (
 type mockTB struct {
 	testing.TB
 	failed bool
+	tmpDir string
 }
 
 func (m *mockTB) Helper()                              {}
@@ -28,7 +29,12 @@ func (m *mockTB) Skip(args ...any)                     {}
 func (m *mockTB) Skipf(format string, args ...any)     {}
 func (m *mockTB) SkipNow()                             {}
 func (m *mockTB) Skipped() bool                        { return false }
-func (m *mockTB) TempDir() string                      { return os.TempDir() }
+func (m *mockTB) TempDir() string {
+	if m.tmpDir != "" {
+		return m.tmpDir
+	}
+	return os.TempDir()
+}
 func (m *mockTB) Setenv(key, value string)             {}
 func (m *mockTB) Cleanup(func())                       {}
 func (m *mockTB) Error(args ...any)                    { m.failed = true }

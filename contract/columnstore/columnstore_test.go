@@ -21,6 +21,24 @@ func TestRunners(t *testing.T) {
 	}
 }
 
+func TestRunBatchInsertRowCheck(t *testing.T) {
+	t.Parallel()
+	probe := &probeT{}
+	RunBatchInsert(probe, lowRowCountStore{})
+	if !probe.failed {
+		t.Fatal("expected failure for < 2 rows")
+	}
+}
+
+func TestRunColumnStoreNilRows(t *testing.T) {
+	t.Parallel()
+	probe := &probeT{}
+	RunColumnStore(probe, nilRowsStore{})
+	if !probe.failed {
+		t.Fatal("expected failure for nil rows")
+	}
+}
+
 type fakeStore struct{}
 
 func (fakeStore) Insert(context.Context, string, Row) error    { return nil }
@@ -28,3 +46,18 @@ func (fakeStore) Query(context.Context, string) ([]Row, error) { return []Row{{"
 func (fakeStore) InsertBatch(_ context.Context, _ string, rows []Row) (Result, error) {
 	return Result{Rows: len(rows)}, nil
 }
+
+type lowRowCountStore struct{ fakeStore }
+
+func (lowRowCountStore) InsertBatch(_ context.Context, _ string, _ []Row) (Result, error) {
+	return Result{Rows: 1}, nil
+}
+
+type nilRowsStore struct{ fakeStore }
+
+func (nilRowsStore) Query(context.Context, string) ([]Row, error) { return nil, nil }
+
+type probeT struct{ failed bool }
+
+func (p *probeT) Helper()               {}
+func (p *probeT) Fatalf(string, ...any) { p.failed = true }

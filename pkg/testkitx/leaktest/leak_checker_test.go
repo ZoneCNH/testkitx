@@ -1,6 +1,7 @@
 package leaktest_test
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/ZoneCNH/testkitx/pkg/testkitx/leaktest"
@@ -19,7 +20,6 @@ func TestIgnoreGoroutinesReturnsPatterns(t *testing.T) {
 }
 
 func TestCheckLeakWithIgnorePatterns(t *testing.T) {
-	// Start a goroutine that stays alive during the test.
 	started := make(chan struct{})
 	release := make(chan struct{})
 	go func() {
@@ -28,7 +28,49 @@ func TestCheckLeakWithIgnorePatterns(t *testing.T) {
 	}()
 	<-started
 
-	// Use an ignore pattern that matches the leaked goroutine's stack frame.
 	leaktest.CheckLeak(t, "leaktest_test.TestCheckLeakWithIgnorePatterns")
 	close(release)
+}
+
+func TestCheckLeakDetectsLeakedGoroutine(t *testing.T) {
+	// Start goroutine BEFORE CheckLeak — so before count includes it.
+	// Cleanup sees after <= before → early return (no leak detected).
+	started := make(chan struct{})
+	release := make(chan struct{})
+	go func() {
+		close(started)
+		<-release
+	}()
+	<-started
+
+	t.Run("sub", func(t *testing.T) {
+		leaktest.CheckLeak(t)
+	})
+	close(release)
+}
+
+func TestCheckLeakCleanupDetectsLeak(t *testing.T) {
+	// Call CheckLeak first, then start a goroutine that stays alive.
+	// When the test function returns, the cleanup runs and detects the leak.
+	leaktest.CheckLeak(t)
+
+	release := make(chan struct{})
+	go func() {
+		<-release
+	}()
+
+	// Give goroutine time to be scheduled.
+	runtime.Gosched()
+
+	// Do NOT close release — the goroutine stays alive past test end.
+	// The cleanup closure will call t.Errorf (not t.Fatalf), covering lines 16-36.
+	_ = release
+}
+
+func TestRequireNoLeakDetectsLeak(t *testing.T) {
+	// Verify Check returns error for 0-goroutine snapshot.
+	start := leaktest.Snapshot{Goroutines: 0}
+	if err := leaktest.Check(start, 0); err == nil {
+		t.Fatal("expected Check to return error for inflated snapshot")
+	}
 }

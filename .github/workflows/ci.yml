@@ -38,7 +38,9 @@ jobs:
 
       - name: Coverage Report
         if: always()
-        run: GOWORK=off go test ./... -coverprofile=coverage.out -covermode=atomic -timeout 180s
+        run: |
+          pkgs=$(GOWORK=off go list ./... | grep -v internal/tools)
+          GOWORK=off go test -coverpkg=./pkg/... $pkgs -coverprofile=coverage.out -covermode=atomic -timeout 180s
 
       - name: Upload coverage
         if: always()

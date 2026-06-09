@@ -3,6 +3,8 @@ package sql
 import (
 	"context"
 	"errors"
+	"runtime"
+	"sync"
 	"testing"
 )
 
@@ -79,6 +81,38 @@ func TestRunTransactionFailsOnExecError(t *testing.T) {
 	}
 }
 
+func TestRunExecQueryNilRows(t *testing.T) {
+	t.Parallel()
+	probe := &fatalProbeT{}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer func() { recover() }()
+		RunExecQuery(probe, nilRowsDB{})
+	}()
+	wg.Wait()
+	if !probe.failed {
+		t.Fatal("expected failure for nil rows")
+	}
+}
+
+func TestRunPoolNegativeStats(t *testing.T) {
+	t.Parallel()
+	probe := &fatalProbeT{}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer func() { recover() }()
+		RunPool(probe, negStatsPool{})
+	}()
+	wg.Wait()
+	if !probe.failed {
+		t.Fatal("expected failure for negative stats")
+	}
+}
+
 type recordingDB struct {
 	beginCount    int
 	commitCount   int
@@ -123,7 +157,45 @@ func (failingTx) Exec(context.Context, string, ...any) (Result, error) {
 func (failingTx) Commit(context.Context) error   { return nil }
 func (failingTx) Rollback(context.Context) error { return nil }
 
+// probeT is a simple test probe that records Fatalf calls without stopping execution.
 type probeT struct{ failed bool }
 
 func (p *probeT) Helper()               {}
 func (p *probeT) Fatalf(string, ...any) { p.failed = true }
+
+// fatalProbeT calls runtime.Goexit() on Fatalf, like *testing.T.
+// Must be used in a goroutine with recover() to avoid test failures.
+type fatalProbeT struct{ failed bool }
+
+func (p *fatalProbeT) Helper()               {}
+func (p *fatalProbeT) Fatalf(string, ...any) { p.failed = true; runtime.Goexit() }
+
+type nilRowsDB struct{ fakeDB }
+
+func (nilRowsDB) Query(context.Context, string, ...any) (Rows, error) { return nil, nil }
+
+type negStatsPool struct{ fakeDB }
+
+func (negStatsPool) Stats(context.Context) (PoolStats, error) {
+	return PoolStats{Open: -1}, nil
+}
+
+func TestRunTransactionNilTx(t *testing.T) {
+	t.Parallel()
+	probe := &probeT{}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer func() { recover() }()
+		RunTransaction(probe, nilTxDB{})
+	}()
+	wg.Wait()
+	if !probe.failed {
+		t.Fatal("expected failure for nil tx")
+	}
+}
+
+type nilTxDB struct{}
+
+func (nilTxDB) BeginTx(context.Context) (Tx, error) { return nil, nil }

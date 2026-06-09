@@ -14,26 +14,32 @@ func CheckLeak(t *testing.T, ignorePatterns ...string) {
 	before := Capture()
 
 	t.Cleanup(func() {
-		// Force GC to flush finalizers.
-		for i := 0; i < 20; i++ {
-			runtime.GC()
-		}
-
-		after := runtime.NumGoroutine()
-		if after <= before.Goroutines {
-			return
-		}
-
-		buf := make([]byte, 1<<20)
-		n := runtime.Stack(buf, true)
-		stack := string(buf[:n])
-
-		unexpected := countUnexpectedGoroutines(stack, ignorePatterns)
-		if unexpected > 0 {
-			t.Errorf("goroutine leak: before=%d after=%d unexpected=%d\n%s",
-				before.Goroutines, after, unexpected, stack)
-		}
+		checkLeakCleanup(t, before, ignorePatterns)
 	})
+}
+
+// checkLeakCleanup is the extracted cleanup logic, testable directly.
+func checkLeakCleanup(t testing.TB, before Snapshot, ignorePatterns []string) {
+	t.Helper()
+	// Force GC to flush finalizers.
+	for i := 0; i < 20; i++ {
+		runtime.GC()
+	}
+
+	after := runtime.NumGoroutine()
+	if after <= before.Goroutines {
+		return
+	}
+
+	buf := make([]byte, 1<<20)
+	n := runtime.Stack(buf, true)
+	stack := string(buf[:n])
+
+	unexpected := countUnexpectedGoroutines(stack, ignorePatterns)
+	if unexpected > 0 {
+		t.Errorf("goroutine leak: before=%d after=%d unexpected=%d\n%s",
+			before.Goroutines, after, unexpected, stack)
+	}
 }
 
 // IgnoreGoroutines is a convenience that returns the patterns slice unchanged.
