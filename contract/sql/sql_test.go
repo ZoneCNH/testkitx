@@ -179,3 +179,23 @@ type negStatsPool struct{ fakeDB }
 func (negStatsPool) Stats(context.Context) (PoolStats, error) {
 	return PoolStats{Open: -1}, nil
 }
+
+func TestRunTransactionNilTx(t *testing.T) {
+	t.Parallel()
+	probe := &probeT{}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer func() { recover() }()
+		RunTransaction(probe, nilTxDB{})
+	}()
+	wg.Wait()
+	if !probe.failed {
+		t.Fatal("expected failure for nil tx")
+	}
+}
+
+type nilTxDB struct{}
+
+func (nilTxDB) BeginTx(context.Context) (Tx, error) { return nil, nil }

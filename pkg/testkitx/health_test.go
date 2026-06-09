@@ -332,3 +332,21 @@ func TestHealthCheckDeadlineBelowTimeout(t *testing.T) {
 	}
 }
 
+
+
+func TestHealthCheckDeadlineExceededWithTimeoutAndErr(t *testing.T) {
+	t.Parallel()
+	c := &Client{
+		cfg:         Config{Name: "test", Timeout: time.Second},
+		metrics:     NoopMetrics{},
+		initialized: true,
+	}
+	// Create a context with a deadline that has already passed.
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Minute))
+	defer cancel()
+	// ctx.Err() should return context.DeadlineExceeded.
+	status := c.HealthCheck(ctx)
+	if status.Status != HealthUnhealthy {
+		t.Fatalf("expected unhealthy, got %s", status.Status)
+	}
+}

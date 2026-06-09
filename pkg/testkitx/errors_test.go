@@ -244,3 +244,14 @@ func TestErrorMessageEmptyWithCause(t *testing.T) {
 		t.Fatalf("unexpected error string: %q", e.Error())
 	}
 }
+
+
+func TestErrorMessageEmptyWithCauseDirect(t *testing.T) {
+	t.Parallel()
+	// Construct Error directly to bypass newError which copies cause to message.
+	e := &Error{Kind: ErrorKindConnection, Op: "op", Cause: fmt.Errorf("underlying")}
+	got := e.Error()
+	if !strings.Contains(got, "underlying") {
+		t.Fatalf("expected cause in error string, got %q", got)
+	}
+}
