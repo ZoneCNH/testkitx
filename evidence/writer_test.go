@@ -227,6 +227,7 @@ func TestWriteFileCreateError(t *testing.T) {
 	err := WriteFile("/dev/null/sub/evidence.json", run)
 	if err == nil {
 		t.Fatal("expected error creating file under /dev/null")
+>>>>>>> origin/main
 	}
 }
 
