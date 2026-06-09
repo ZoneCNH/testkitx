@@ -299,3 +299,35 @@ func TestHealthCheckClientWithCustomTimeoutNoDeadline(t *testing.T) {
 		t.Fatalf("expected healthy, got %q", status.Status)
 	}
 }
+
+func TestHealthCheckExpiredDeadlineRemaining(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel immediately so ctx.Err() != nil
+
+	c := &Client{cfg: Config{Name: "test"}, metrics: NoopMetrics{}, initialized: true}
+	status := c.HealthCheck(ctx)
+	if status.Status != HealthUnhealthy {
+		t.Fatalf("expected unhealthy, got %s", status.Status)
+	}
+}
+
+func TestHealthCheckDeadlineBelowTimeout(t *testing.T) {
+	t.Parallel()
+	// Create a client with a timeout
+	c := &Client{
+		cfg:         Config{Name: "test", Timeout: 10 * time.Second},
+		metrics:     NoopMetrics{},
+		initialized: true,
+	}
+	// Create a context with a very short deadline (less than the client timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+	defer cancel()
+	time.Sleep(2 * time.Millisecond) // let the deadline pass
+
+	status := c.HealthCheck(ctx)
+	// With an expired deadline, ctx.Err() will be set, so we get unhealthy
+	if status.Status != HealthUnhealthy {
+		t.Fatalf("expected unhealthy with expired deadline, got %s", status.Status)
+	}
+}
