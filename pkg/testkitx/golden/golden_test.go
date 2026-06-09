@@ -39,3 +39,19 @@ func TestAssertJSONCanonicalizesOutput(t *testing.T) {
 	t.Setenv(golden.UpdateEnv, "")
 	golden.AssertBytes(t, path, []byte("{\n  \"a\": 1,\n  \"b\": 2\n}"))
 }
+
+func TestAssertBytesCreatesDirectoryInUpdateMode(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "deep", "nested", "dir", "golden.json")
+	t.Setenv(golden.UpdateEnv, "1")
+	evidence := golden.AssertBytes(t, path, []byte(`{"ok":true}`))
+	if !evidence.Updated {
+		t.Fatal("expected Updated=true")
+	}
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != `{"ok":true}` {
+		t.Fatalf("content = %q, want %q", got, `{"ok":true}`)
+	}
+}

@@ -226,6 +226,149 @@ func containsFailure(failures []string, want string) bool {
 	return false
 }
 
+func TestRequireNumericRejectsEmptyValue(t *testing.T) {
+	t.Parallel()
+	var failures []string
+	requireNumeric(&failures, "workflow_run_id", "  ")
+	if len(failures) != 1 || !strings.Contains(failures[0], "is required") {
+		t.Fatalf("failures = %v, want 'is required'", failures)
+	}
+}
+
+func TestRequireNumericRejectsNonDigits(t *testing.T) {
+	t.Parallel()
+	var failures []string
+	requireNumeric(&failures, "workflow_run_id", "abc123")
+	if len(failures) != 1 || !strings.Contains(failures[0], "digits only") {
+		t.Fatalf("failures = %v, want 'digits only'", failures)
+	}
+}
+
+func TestRequireHTTPURLRejectsEmptyValue(t *testing.T) {
+	t.Parallel()
+	var failures []string
+	requireHTTPURL(&failures, "artifact_url", "  ")
+	if len(failures) != 1 || !strings.Contains(failures[0], "is required") {
+		t.Fatalf("failures = %v, want 'is required'", failures)
+	}
+}
+
+func TestRequireHTTPURLRejectsInvalidURL(t *testing.T) {
+	t.Parallel()
+	var failures []string
+	requireHTTPURL(&failures, "artifact_url", "://bad")
+	if len(failures) != 1 || !strings.Contains(failures[0], "absolute URL") {
+		t.Fatalf("failures = %v, want 'absolute URL'", failures)
+	}
+}
+
+func TestRequireHTTPURLRejectsNonHTTPScheme(t *testing.T) {
+	t.Parallel()
+	var failures []string
+	requireHTTPURL(&failures, "artifact_url", "ftp://example.com/file")
+	if len(failures) != 1 || !strings.Contains(failures[0], "http or https") {
+		t.Fatalf("failures = %v, want 'http or https'", failures)
+	}
+}
+
+func TestRequireHexStringRejectsWrongLength(t *testing.T) {
+	t.Parallel()
+	var failures []string
+	requireHexString(&failures, "commit", "abcd", 20)
+	if len(failures) != 1 || !strings.Contains(failures[0], "40 hex characters") {
+		t.Fatalf("failures = %v, want '40 hex characters'", failures)
+	}
+}
+
+func TestRequireHexStringRejectsInvalidHex(t *testing.T) {
+	t.Parallel()
+	var failures []string
+	requireHexString(&failures, "commit", strings.Repeat("zz", 20), 20)
+	if len(failures) != 1 || !strings.Contains(failures[0], "valid hex") {
+		t.Fatalf("failures = %v, want 'valid hex'", failures)
+	}
+}
+
+func TestValidateEvidenceRejectsEmptyGateName(t *testing.T) {
+	t.Parallel()
+	evidence := validEvidence()
+	evidence.Gates = map[string]string{"": "passed"}
+	failures := validateEvidence(evidence)
+	if !containsFailure(failures, "empty gate name") {
+		t.Fatalf("failures = %v, want empty gate name", failures)
+	}
+}
+
+func TestValidateEvidenceRejectsEmptyGateStatus(t *testing.T) {
+	t.Parallel()
+	evidence := validEvidence()
+	evidence.Gates = map[string]string{"ci": "  "}
+	failures := validateEvidence(evidence)
+	if !containsFailure(failures, "gates.ci is required") {
+		t.Fatalf("failures = %v, want gates.ci is required", failures)
+	}
+}
+
+func TestVerifyEvidenceRejectsNonexistentFile(t *testing.T) {
+	t.Parallel()
+	err := verifyEvidence("/nonexistent/path.json")
+	if err == nil {
+		t.Fatal("expected error for nonexistent file")
+	}
+}
+
+func TestVerifyEvidenceRejectsInvalidJSON(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "bad.json")
+	os.WriteFile(path, []byte("not json"), 0o644)
+	err := verifyEvidence(path)
+	if err == nil {
+		t.Fatal("expected error for invalid JSON")
+	}
+}
+
+func TestFlexibleStringUnmarshalNull(t *testing.T) {
+	t.Parallel()
+	var fs flexibleString
+	if err := json.Unmarshal([]byte("null"), &fs); err != nil {
+		t.Fatal(err)
+	}
+	if fs != "" {
+		t.Fatalf("flexibleString(null) = %q, want empty", fs)
+	}
+}
+
+func TestFlexibleStringUnmarshalEmpty(t *testing.T) {
+	t.Parallel()
+	var fs flexibleString
+	if err := json.Unmarshal([]byte(`""`), &fs); err != nil {
+		t.Fatal(err)
+	}
+	if fs != "" {
+		t.Fatalf("flexibleString(\"\") = %q, want empty", fs)
+	}
+}
+
+func TestFlexibleStringUnmarshalQuoted(t *testing.T) {
+	t.Parallel()
+	var fs flexibleString
+	if err := json.Unmarshal([]byte(`"12345"`), &fs); err != nil {
+		t.Fatal(err)
+	}
+	if fs != "12345" {
+		t.Fatalf(`flexibleString("12345") = %q, want "12345"`, fs)
+	}
+}
+
+func TestRunCLIHelpReturnsZero(t *testing.T) {
+	t.Parallel()
+	var stdout, stderr bytes.Buffer
+	code := runCLI("downstreamadoption", []string{"-help"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("runCLI -help exit code = %d, want 0", code)
+	}
+}
+
 type errorWriter struct{}
 
 func (errorWriter) Write([]byte) (int, error) {

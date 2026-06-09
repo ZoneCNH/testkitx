@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -81,6 +82,70 @@ func TestVerifyManifestAcceptsFreshManifestAndRejectsDrift(t *testing.T) {
 		if !strings.Contains(message, want) {
 			t.Fatalf("error = %q, want substring %q", message, want)
 		}
+	}
+}
+
+func TestValidateChecksRejectsEmptyStatus(t *testing.T) {
+	t.Parallel()
+
+	checks := make(map[string]string, len(checkNames()))
+	for _, name := range checkNames() {
+		checks[name] = "passed"
+	}
+	checks["security"] = ""
+
+	failures := validateChecks(checks, false)
+
+	if len(failures) != 1 {
+		t.Fatalf("len(failures) = %d, want 1: %v", len(failures), failures)
+	}
+	if !strings.Contains(failures[0], "checks.security is required") {
+		t.Fatalf("failure = %q, want 'checks.security is required'", failures[0])
+	}
+}
+
+func TestValidateChecksAcceptsValidStatuses(t *testing.T) {
+	t.Parallel()
+
+	checks := make(map[string]string, len(checkNames()))
+	for _, name := range checkNames() {
+		checks[name] = "passed"
+	}
+
+	failures := validateChecks(checks, true)
+
+	if len(failures) != 0 {
+		t.Fatalf("failures = %v, want empty", failures)
+	}
+}
+
+func TestValidCheckStatus(t *testing.T) {
+	t.Parallel()
+	for _, status := range []string{"passed", "failed", "skipped", "unknown"} {
+		if !validCheckStatus(status) {
+			t.Fatalf("validCheckStatus(%q) = false, want true", status)
+		}
+	}
+	if validCheckStatus("bogus") {
+		t.Fatal("validCheckStatus(bogus) = true, want false")
+	}
+}
+
+func TestVerifyManifestRejectsNonexistentFile(t *testing.T) {
+	t.Parallel()
+	err := verifyManifest("/nonexistent/manifest.json", false, false, "")
+	if err == nil {
+		t.Fatal("expected error for nonexistent file")
+	}
+}
+
+func TestVerifyManifestRejectsInvalidJSON(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "bad.json")
+	os.WriteFile(path, []byte("not json"), 0o644)
+	err := verifyManifest(path, false, false, "")
+	if err == nil {
+		t.Fatal("expected error for invalid JSON")
 	}
 }
 

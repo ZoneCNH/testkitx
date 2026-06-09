@@ -176,3 +176,55 @@ func TestErrorWithOnlyCause(t *testing.T) {
 		t.Fatalf("expected cause message in error string, got %q", got)
 	}
 }
+
+func TestErrorEmptyMessageWithCause(t *testing.T) {
+	t.Parallel()
+	cause := fmt.Errorf("underlying problem")
+	err := WrapError(ErrorKindConnection, "svc.Call", "", true, cause)
+	if got := err.Error(); !strings.Contains(got, "underlying problem") {
+		t.Fatalf("expected cause text in error, got %q", got)
+	}
+	if err.Message != "underlying problem" {
+		t.Fatalf("expected message to be set from cause, got %q", err.Message)
+	}
+}
+
+func TestErrorNoOpNoMessage(t *testing.T) {
+	t.Parallel()
+	err := NewError(ErrorKindInternal, "", "", false)
+	got := err.Error()
+	if got != string(ErrorKindInternal) {
+		t.Fatalf("expected just kind, got %q", got)
+	}
+}
+
+func TestErrorWithOpOnly(t *testing.T) {
+	t.Parallel()
+	err := NewError(ErrorKindAuth, "login", "", false)
+	got := err.Error()
+	if got != "auth: login" {
+		t.Fatalf("expected kind:op, got %q", got)
+	}
+}
+
+func TestValidationErrorHelper(t *testing.T) {
+	t.Parallel()
+	err := validationError("validate.input", "bad value", nil)
+	if err.Kind != ErrorKindValidation {
+		t.Fatalf("expected validation kind, got %q", err.Kind)
+	}
+	if err.Retryable {
+		t.Fatal("expected non-retryable")
+	}
+}
+
+func TestContextErrorNonDeadline(t *testing.T) {
+	t.Parallel()
+	err := contextError("op", context.Canceled)
+	if err.Kind != ErrorKindUnavailable {
+		t.Fatalf("expected unavailable kind, got %q", err.Kind)
+	}
+	if err.Retryable {
+		t.Fatal("expected non-retryable for canceled")
+	}
+}
