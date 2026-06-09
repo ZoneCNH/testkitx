@@ -14,11 +14,11 @@ vet:
 
 .PHONY: test
 test:
-	go test ./...
+	go test -coverpkg=./pkg/... $$(go list ./... | grep -v internal/tools)
 
 .PHONY: race
 race:
-	go test -race ./...
+	go test -race -coverpkg=./pkg/... $$(go list ./... | grep -v internal/tools)
 
 .PHONY: build
 build:
@@ -106,7 +106,7 @@ release-evidence-check:
 
 .PHONY: coverage-check
 coverage-check:
-	@go test ./... -coverprofile=coverage.out -covermode=atomic -timeout 180s
+	@go test -coverpkg=./pkg/... $$(go list ./... | grep -v internal/tools) -coverprofile=coverage.out -covermode=atomic -timeout 180s
 	@COVERAGE=$$(go tool cover -func=coverage.out | grep 'total:' | awk '{print $$3}' | sed 's/%//'); \
 	echo "Total coverage: $$COVERAGE%"; \
 	if [ $$(echo "$$COVERAGE < 80" | bc -l) -eq 1 ]; then \
