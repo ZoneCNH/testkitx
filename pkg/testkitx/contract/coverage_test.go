@@ -165,3 +165,81 @@ func TestCopyMetadataNonNil(t *testing.T) {
 		t.Fatalf("expected metadata k=v, got %v", evidence.Metadata)
 	}
 }
+
+func TestAssertHashFileNotFound(t *testing.T) {
+	t.Parallel()
+	m := &mockTB{}
+	contract.AssertHash(m, "test", filepath.Join(t.TempDir(), "nonexistent.json"), "abc", nil)
+	if !m.failed {
+		t.Fatal("expected failure on missing file")
+	}
+}
+
+func TestWriteEvidenceWhitespacePath(t *testing.T) {
+	t.Parallel()
+	valid := contract.Evidence{
+		Kind:         "contract_check",
+		ContractID:   "test",
+		ContractPath: "contract.json",
+		SHA256:       strings.Repeat("a", 64),
+		Matched:      true,
+	}
+	err := contract.WriteEvidence("   ", valid)
+	if err == nil || !strings.Contains(err.Error(), "evidence path is required") {
+		t.Fatalf("expected path required error, got %v", err)
+	}
+}
+
+
+func TestWriteEvidenceHappyPath(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "sub", "evidence.json")
+	valid := contract.Evidence{
+		Kind:         "contract_check",
+		ContractID:   "test",
+		ContractPath: "contract.json",
+		SHA256:       strings.Repeat("a", 64),
+		Matched:      true,
+	}
+	if err := contract.WriteEvidence(path, valid); err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read evidence: %v", err)
+	}
+	if len(data) == 0 {
+		t.Fatal("expected non-empty evidence file")
+	}
+}
+
+func TestWriteEvidenceMkdirAllError(t *testing.T) {
+	t.Parallel()
+	valid := contract.Evidence{
+		Kind:         "contract_check",
+		ContractID:   "test",
+		ContractPath: "contract.json",
+		SHA256:       strings.Repeat("a", 64),
+		Matched:      true,
+	}
+	// Create a file where a directory is expected, so MkdirAll fails.
+	blocker := filepath.Join(t.TempDir(), "blocker")
+	os.WriteFile(blocker, []byte("x"), 0o644)
+	err := contract.WriteEvidence(filepath.Join(blocker, "sub", "evidence.json"), valid)
+	if err == nil {
+		t.Fatal("expected MkdirAll error")
+	}
+}
+
+func TestHashDirReadFileError(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	// Create a file, then make it unreadable.
+	path := filepath.Join(dir, "unreadable.txt")
+	os.WriteFile(path, []byte("data"), 0o000)
+	_, err := contract.HashDir(dir)
+	// On some systems running as root, this won't fail. Skip if so.
+	if err == nil {
+		t.Skip("running as root or permissions not enforced")
+	}
+}
