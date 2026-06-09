@@ -79,3 +79,25 @@ func TestAssertJSONSuccessUpdate(t *testing.T) {
 		t.Fatal("expected Matched=true for JSON golden update")
 	}
 }
+
+
+func TestUpdateMkdirAllDirectError(t *testing.T) {
+	t.Setenv(golden.UpdateEnv, "1")
+	blocker := filepath.Join(t.TempDir(), "blocker")
+	os.WriteFile(blocker, []byte("x"), 0o644)
+	// Update takes *testing.T, so use AssertBytes with mockTB instead for error path.
+	m := &mockTB{}
+	golden.AssertBytes(m, filepath.Join(blocker, "sub", "file.golden"), []byte("data"))
+	if !m.failed {
+		t.Fatal("expected failure on MkdirAll error")
+	}
+}
+
+func TestUpdateWriteFileDirectError(t *testing.T) {
+	t.Setenv(golden.UpdateEnv, "1")
+	m := &mockTB{}
+	golden.AssertBytes(m, "/nonexistent/deep/path/file.golden", []byte("data"))
+	if !m.failed {
+		t.Fatal("expected failure on WriteFile error")
+	}
+}

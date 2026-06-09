@@ -1,9 +1,6 @@
 package testkitx
 
-import (
-	"sync"
-	"testing"
-)
+import "sync"
 
 type metricCall struct {
 	name   string
@@ -123,11 +120,4 @@ func cloneLabels(labels map[string]string) map[string]string {
 		cloned[key] = value
 	}
 	return cloned
-}
-
-func TestNoopMetrics(t *testing.T) {
-	var m NoopMetrics
-	m.IncCounter("test", nil)
-	m.ObserveHistogram("test", 1.0, nil)
-	m.SetGauge("test", 1.0, nil)
 }

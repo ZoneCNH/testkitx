@@ -19,7 +19,6 @@ func TestIgnoreGoroutinesReturnsPatterns(t *testing.T) {
 }
 
 func TestCheckLeakWithIgnorePatterns(t *testing.T) {
-	// Start a goroutine that stays alive during the test.
 	started := make(chan struct{})
 	release := make(chan struct{})
 	go func() {
@@ -28,7 +27,7 @@ func TestCheckLeakWithIgnorePatterns(t *testing.T) {
 	}()
 	<-started
 
-	// Use an ignore pattern that matches the leaked goroutine's stack frame.
 	leaktest.CheckLeak(t, "leaktest_test.TestCheckLeakWithIgnorePatterns")
 	close(release)
 }
+

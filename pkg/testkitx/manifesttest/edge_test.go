@@ -26,7 +26,6 @@ func TestVerifyChecksumReferenceMismatch(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "manifest.json")
 	manifesttest.Write(path, manifest)
 	checksumPath := manifesttest.ChecksumPath(path)
-	// Rewrite checksum with wrong filename reference
 	os.WriteFile(checksumPath, []byte("abc123  wrong_name.json\n"), 0o644)
 	err := manifesttest.VerifyChecksum(path, checksumPath)
 	if err == nil {
@@ -56,6 +55,23 @@ func TestVerifyChecksumNonExistentManifest(t *testing.T) {
 func TestWriteChecksumNonExistentManifest(t *testing.T) {
 	t.Parallel()
 	err := manifesttest.WriteChecksum("/nonexistent/manifest.json", filepath.Join(t.TempDir(), "out.sha256"))
+	if err == nil {
+		t.Fatal("expected error for nonexistent manifest")
+	}
+}
+
+func TestWriteInvalidManifest(t *testing.T) {
+	t.Parallel()
+	invalid := manifesttest.Manifest{}
+	err := manifesttest.Write(filepath.Join(t.TempDir(), "m.json"), invalid)
+	if err == nil || err.Error() != "manifest missing required fields" {
+		t.Fatalf("expected validate error, got %v", err)
+	}
+}
+
+func TestReadNonExistentManifest(t *testing.T) {
+	t.Parallel()
+	_, err := manifesttest.Read("/nonexistent/manifest.json")
 	if err == nil {
 		t.Fatal("expected error for nonexistent manifest")
 	}

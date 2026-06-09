@@ -25,6 +25,3 @@ func TestLoadJSONDeserializesFixture(t *testing.T) {
 		t.Fatalf("unexpected fixture value: %+v", v)
 	}
 }
-
-
-
