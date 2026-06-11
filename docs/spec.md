@@ -14,7 +14,7 @@
 - `GOWORK=off make release-check` 通过，并以 `CHECK_STATUS=passed` 生成未提交的 `release/manifest/latest.json` 与 `release/manifest/latest.json.sha256` Evidence artifact。
 - `contracts/config.schema.json` 与 `Config` 字段映射保持一致，`timeout_ms` 映射到 `Config.Timeout`。
 - `contracts/error.schema.json`、`contracts/health.schema.json` 和 `contracts/metrics.md` 与公共常量保持一致。
-- `scripts/render_template.sh` 作为历史 regression 入口，可以生成 `foundationx` 形态并通过 `GOWORK=off go test ./...`。
+- `scripts/render_template.sh` 作为历史 regression 入口保留（兼容已有 gate），不作为新模块采用方式。
 - 模块不得依赖 `github.com/bytechainx/x.go` 或 `github.com/ZoneCNH/x.go`。
 - 模块不得隐式读取生产密钥。
 - 下游生产 import 图不得依赖 `github.com/ZoneCNH/testkitx/pkg/testkitx` 或其子包。
@@ -22,8 +22,9 @@
 ## 非目标
 
 - 不包含业务模型、生产连接默认值和隐藏全局客户端。
+- 不作为 xlib-standard 模板渲染目标（testkitx 是 concrete L1 test-only library）。
 
 ## 可追踪性
 
 - 目标：`GOAL-20260601-001`
-- 模板占位符：`testkitx`、`github.com/ZoneCNH/testkitx`、`testkitx`
+- 模块：`github.com/ZoneCNH/testkitx`
