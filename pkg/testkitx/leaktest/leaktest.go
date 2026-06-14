@@ -28,3 +28,22 @@ func RequireNoLeak(t testing.TB, start Snapshot, tolerance int) {
 		t.Fatal(err)
 	}
 }
+
+// GoroutineLeakCheck captures the goroutine count when called and
+// registers a cleanup that fails t if goroutines leak. Per SPEC FR-010.
+//
+// Usage:
+//
+//	func TestSomething(t *testing.T) {
+//	    GoroutineLeakCheck(t)
+//	    // ... test logic ...
+//	}
+func GoroutineLeakCheck(tt testing.TB) {
+	tt.Helper()
+	start := Capture()
+	tt.Cleanup(func() {
+		if err := Check(start, 0); err != nil {
+			tt.Error(err)
+		}
+	})
+}

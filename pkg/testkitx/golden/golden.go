@@ -14,6 +14,13 @@ import (
 
 const UpdateEnv = "TESTKITX_UPDATE_GOLDEN"
 
+// GoldenUpdate reports whether golden files should be updated.
+// It checks the GOLDEN_UPDATE environment variable per SPEC §11 (FR-008).
+// It also respects TESTKITX_UPDATE_GOLDEN for backward compatibility.
+func GoldenUpdate() bool {
+	return os.Getenv("GOLDEN_UPDATE") == "1" || os.Getenv(UpdateEnv) == "1"
+}
+
 type Evidence struct {
 	Kind         string `json:"kind"`
 	Path         string `json:"path"`
