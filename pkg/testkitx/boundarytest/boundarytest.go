@@ -84,3 +84,32 @@ func Scan(cfg ScanConfig) ([]Violation, error) {
 func ScanProductionImports(root, forbiddenPrefix string) ([]Violation, error) {
 	return Scan(ScanConfig{Dir: root, ForbiddenPrefix: forbiddenPrefix})
 }
+
+// T is the subset of testing.TB used by boundary assertions.
+type T interface {
+	Helper()
+	Errorf(format string, args ...any)
+	Fatalf(format string, args ...any)
+}
+
+// BoundaryCheck scans the given module directory for production imports of
+// testkitx and fails t if any are found. Per SPEC FR-009.
+//
+// The module argument should be the root directory of the module to scan.
+// Pass "." to scan the current module.
+func BoundaryCheck(tt T, module string) {
+	tt.Helper()
+	violations, err := Scan(ScanConfig{
+		Dir:             module,
+		ForbiddenPrefix: "github.com/ZoneCNH/testkitx",
+	})
+	if err != nil {
+		tt.Fatalf("boundary check failed: %v", err)
+	}
+	for _, v := range violations {
+		tt.Errorf("boundary violation: %s", v.String())
+	}
+	if len(violations) > 0 {
+		tt.Errorf("BoundaryCheck: %d production import(s) of testkitx detected", len(violations))
+	}
+}
