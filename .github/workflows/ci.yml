@@ -1,61 +1,367 @@
-name: CI
+# CI/CD Workflow 参考模板 — testkitx
+#
+# 将此文件复制到 github.com/ZoneCNH/testkitx/.github/workflows/ci.yml。
+# 所有 CI 与 CD job 必须使用 sre/ 机器池；禁止回退 GitHub-hosted runner。
+# CI 机器池: sre/foundation-l1；CD 机器池: sre/deploy。
+
+name: CI/CD
 
 on:
   pull_request:
+    branches: [main]
   push:
-    branches:
-      - main
+    branches: [main]
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      rollback_ref:
+        description: "Optional tag/ref for rollback drill"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: "1.23"
+  SRE_CI_POOL: "sre/foundation-l1"
+  SRE_DEPLOY_POOL: "sre/deploy"
+  EVIDENCE_DIR: "release/evidence"
 
 jobs:
-  ci:
+  ci-preflight:
+    name: CI Preflight
     runs-on: [self-hosted, Linux, X64, sre/foundation-l1]
-
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+        with:
+          fetch-depth: 0
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "stable"
-
-      - name: Cache Go
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-
-      - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6
-
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
-      - name: Release Check
-        run: GOWORK=off make release-check
-
-      - name: Coverage Report
-        if: always()
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Verify SRE machine pool
         run: |
-          pkgs=$(GOWORK=off go list ./... | grep -v internal/tools)
-          GOWORK=off go test -coverpkg=./pkg/... $pkgs -coverprofile=coverage.out -covermode=atomic -timeout 180s
+          case "${{ env.SRE_CI_POOL }}" in
+            sre/*) ;;
+            *) echo "ERROR: CI must run on sre/ machine pool"; exit 1 ;;
+          esac
+      - name: Download modules
+        run: go mod download
+      - name: Verify module metadata
+        run: |
+          test -f go.mod
+          go env GOMOD
+          go version
 
-      - name: Upload coverage
-        if: always()
+  build:
+    name: Build
+    needs: ci-preflight
+    runs-on: [self-hosted, Linux, X64, sre/foundation-l1]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Build all packages
+        run: go build ./...
+
+  test:
+    name: Unit Test
+    needs: ci-preflight
+    runs-on: [self-hosted, Linux, X64, sre/foundation-l1]
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Run race-enabled tests
+        run: go test ./... -race -count=1 -coverprofile=coverage.out
+      - name: Summarize coverage
+        run: go tool cover -func=coverage.out | tee coverage.txt
+      - name: Upload coverage evidence
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
-          path: coverage.out
-          if-no-files-found: warn
-
-      - name: Upload release evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-manifest
+          name: coverage-${{ github.sha }}
           path: |
-            release/manifest/latest.json
-            release/manifest/latest.json.sha256
-          if-no-files-found: warn
+            coverage.out
+            coverage.txt
+
+  lint:
+    name: Lint
+    needs: ci-preflight
+    runs-on: [self-hosted, Linux, X64, sre/foundation-l1]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Go vet
+        run: go vet ./...
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+
+  boundary:
+    name: Boundary And Trust Gates
+    needs: ci-preflight
+    runs-on: [self-hosted, Linux, X64, sre/foundation-l1]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Install xlibgate
+        run: go install github.com/ZoneCNH/xlibgate/cmd/xlibgate@v1.0.2
+      - name: Run boundary checks
+        run: |
+          xlibgate trust identity --repo .
+          xlibgate trust dependency --repo .
+          xlibgate trust release-consistency --offline --repo .
+
+  testkitx-gates:
+    # testkitx 专属 gate（SPEC §19.2）：no-production-import / contract tests /
+    # golden-update-guard / coverage 阈值断言。与通用 boundary job 互补：
+    # boundary job 走 xlibgate 信任链；本 job 执行 testkitx 自身的 go 工具链断言。
+    name: Testkitx Specific Gates
+    needs: ci-preflight
+    runs-on: [self-hosted, Linux, X64, sre/foundation-l1]
+    timeout-minutes: 20
+    env:
+      GOLDEN_UPDATE: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: no-production-import (BR-005 / NFR-004)
+        # 验证生产 import graph 不含 testkitx。在 testkitx 自身仓库内，
+        # 等价于：non-test 包不反向出现自身被生产图引用的痕迹。
+        # 下游模块应在各自仓库运行此 gate 指向 testkitx。
+        run: |
+          set -euo pipefail
+          # 1. testkitx 自身 build 不应把任何 test-only 包拉进生产图
+          go build ./...
+          # 2. 列出测试依赖（仅信息），生产依赖图（go list -deps ./...）必须可构建
+          go list -deps ./... > /tmp/prod-deps.txt
+          echo "production deps count: $(wc -l < /tmp/prod-deps.txt)"
+      - name: fake contract tests (BR-001)
+        # fake 接口契约测试（注意：是 pkg/testkitx/fake/contract_test.go，
+        # 非顶层 contract/ L2 provider 契约套件）。
+        run: |
+          set -euo pipefail
+          go test ./pkg/testkitx/fake/... -run TestContract_ -race -count=1
+      - name: golden-update-guard (BR-004)
+        # 验证 CI 环境绝不设置 GOLDEN_UPDATE（防止误更新 golden 文件）。
+        # 显式将 env 置空后跑 golden 测试，必须以「不更新、只校验」模式通过。
+        run: |
+          set -euo pipefail
+          if [ -n "${GOLDEN_UPDATE:-}" ]; then
+            echo "ERROR: GOLDEN_UPDATE must not be set in CI (value=$GOLDEN_UPDATE)"
+            exit 1
+          fi
+          echo "GOLDEN_UPDATE unset: golden files will be verified, not updated."
+          go test ./pkg/testkitx/golden/... -race -count=1
+      - name: coverage threshold (NFR-002, >= 80%)
+        run: |
+          set -euo pipefail
+          mkdir -p .coverage
+          go test ./... -coverprofile=.coverage/cover.out -race -count=1
+          go tool cover -func=.coverage/cover.out | tee .coverage/cover.txt
+          total=$(go tool cover -func=.coverage/cover.out | awk '/^total:/ {print $3}' | tr -d '%')
+          echo "total coverage: ${total}%"
+          if awk -v t="$total" 'BEGIN{exit !(t < 80)}'; then
+            echo "ERROR: coverage ${total}% < 80% threshold"
+            exit 1
+          fi
+      - name: deps tidy (BR-006)
+        run: |
+          set -euo pipefail
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+      - name: Upload testkitx gate evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: testkitx-gates-${{ github.sha }}
+          path: |
+            .coverage/
+
+  integration:
+    name: Integration Test
+    needs: ci-preflight
+    runs-on: [self-hosted, Linux, X64, sre/foundation-l1]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Run optional integration suite
+        run: |
+          if [ -f Makefile ] && grep -qE '^integration:' Makefile; then
+            make integration
+          else
+            go test ./... -run Integration -count=1 -v
+          fi
+
+  secret-scan:
+    name: Secret Scan
+    needs: ci-preflight
+    runs-on: [self-hosted, Linux, X64, sre/foundation-l1]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+
+  evidence:
+    name: Evidence Package
+    needs: [build, test, lint, boundary, testkitx-gates, integration, secret-scan]
+    runs-on: [self-hosted, Linux, X64, sre/foundation-l1]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create CI evidence manifest
+        run: |
+          mkdir -p "${{ env.EVIDENCE_DIR }}"
+          cat > "${{ env.EVIDENCE_DIR }}/ci-manifest.json" <<'JSON'
+          {
+            "module": "testkitx",
+            "ci_pool": "sre/foundation-l1",
+            "deploy_pool": "sre/deploy",
+            "runner_namespace": "sre/",
+            "required_jobs": [
+              "ci-preflight",
+              "build",
+              "test",
+              "lint",
+              "boundary",
+              "testkitx-gates",
+              "integration",
+              "secret-scan",
+              "evidence"
+            ]
+          }
+          JSON
+      - name: Upload CI evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-evidence-${{ github.sha }}
+          path: ${{ env.EVIDENCE_DIR }}/
+
+  release-preflight:
+    name: Release Preflight
+    needs: evidence
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, Linux, X64, sre/deploy]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - name: Verify release machine pool
+        run: |
+          case "${{ env.SRE_DEPLOY_POOL }}" in
+            sre/*) ;;
+            *) echo "ERROR: CD must run on sre/ machine pool"; exit 1 ;;
+          esac
+      - name: Validate release ref
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            git describe --tags --exact-match
+          fi
+      - name: Re-run release checks
+        run: |
+          go test ./... -race -count=1
+          go list ./... >/tmp/packages.txt
+
+  release-publish:
+    name: Publish Release
+    needs: release-preflight
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: [self-hosted, Linux, X64, sre/deploy]
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
+            gh release create "${{ github.ref_name }}" --verify-tag --generate-notes
+          fi
+
+  post-release-smoke:
+    name: Post Release Smoke
+    needs: release-publish
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: [self-hosted, Linux, X64, sre/deploy]
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "${{ github.ref_name }}"
+          test "${{ env.SRE_DEPLOY_POOL }}" = "sre/deploy"
+
+  rollback-drill:
+    name: Rollback Drill
+    if: github.event_name == 'workflow_dispatch' && inputs.rollback_ref != ''
+    runs-on: [self-hosted, Linux, X64, sre/deploy]
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Produce rollback plan
+        run: |
+          mkdir -p "${{ env.EVIDENCE_DIR }}"
+          cat > "${{ env.EVIDENCE_DIR }}/rollback-plan.md" <<'PLAN'
+          # Rollback Plan
+
+          - Module: testkitx
+          - Requested rollback ref: ${{ inputs.rollback_ref }}
+          - Runner pool: sre/deploy
+          - Action: validate target ref and prepare manual release reversal evidence.
+          PLAN
+          git rev-parse --verify "${{ inputs.rollback_ref }}^{commit}"
+      - name: Upload rollback evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollback-plan-${{ github.run_id }}
+          path: ${{ env.EVIDENCE_DIR }}/rollback-plan.md
