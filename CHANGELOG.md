@@ -2,6 +2,17 @@
 
 ## 未发布
 
+## v0.5.0 - 2026-06-18
+
+### 新增
+
+- 补 `pkg/testkitx/eventually_test.go`：FR-007 `Eventually` 单元测试（8 子测试，覆盖率 0%→100%）。`Eventually` 签名 `*testing.T`→`testing.TB`（向后兼容，*testing.T 实现 testing.TB）以支持 fail 路径可测。
+- 部署完整 CI/CD（`.github/workflows/ci.yml`，含 testkitx-gates：no-production-import / contract / golden-update-guard / coverage-threshold / deps-tidy / gitleaks）+ boundary + secret-scan + evidence + release pipeline；移除重复的 `integration.yml`。
+
+### 改进
+
+- 运行时验收证据归档：全仓 `go build`/`go vet`/`go test -race` exit=0，总覆盖率 92.6%；AC-001~010 / TC-001~010 全部通过。
+
 ## v0.4.0 - 2026-06-05
 
 ### 新增
