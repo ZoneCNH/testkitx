@@ -11,7 +11,11 @@ import (
 // When fn returns true within timeout, the test continues.
 // When fn times out, t is failed with a clear diagnostic.
 // timeout <= 0 means check exactly once.
-func Eventually(t *testing.T, fn func() bool, timeout, interval time.Duration) {
+//
+// The parameter is testing.TB so tests can supply a fake TB to assert fail
+// paths. *testing.T and *testing.B both implement testing.TB, so all
+// existing call sites remain compatible without change.
+func Eventually(t testing.TB, fn func() bool, timeout, interval time.Duration) {
 	t.Helper()
 	if fn == nil {
 		t.Fatalf("Eventually: predicate must not be nil")
