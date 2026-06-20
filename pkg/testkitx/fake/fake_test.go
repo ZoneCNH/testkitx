@@ -10,13 +10,13 @@ import (
 
 func TestFakeConfig_GetString(t *testing.T) {
 	cfg := FakeConfig(map[string]any{
-		"symbol": "BTCUSDT",
+		"symbol": "test-symbol",
 		"count":  42,
 		"active": true,
 	})
 
-	if got := cfg.GetString("symbol"); got != "BTCUSDT" {
-		t.Errorf("GetString(symbol) = %q, want %q", got, "BTCUSDT")
+	if got := cfg.GetString("symbol"); got != "test-symbol" {
+		t.Errorf("GetString(symbol) = %q, want %q", got, "test-symbol")
 	}
 	// Non-string key returns zero value
 	if got := cfg.GetString("count"); got != "" {
@@ -28,7 +28,7 @@ func TestFakeConfig_GetInt(t *testing.T) {
 	cfg := FakeConfig(map[string]any{
 		"count":  42,
 		"pi":     3.14,
-		"symbol": "BTCUSDT",
+		"symbol": "test-symbol",
 	})
 	if got := cfg.GetInt("count"); got != 42 {
 		t.Errorf("GetInt(count) = %d, want 42", got)
