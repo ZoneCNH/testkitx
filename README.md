@@ -80,6 +80,8 @@
 - [错误模型](docs/errors.md)：`ErrorKind`、`NewError`、`WrapError` 和重试语义。
 - [可观测性](docs/observability.md)：指标名、健康状态和 JSON 字段。
 - [测试策略母版](docs/test-strategy.md)：Required、Extended 和 profile-specific gates。
+- [功能清单](FEATURES.md)：当前审计过的 L1 能力面与边界。
+- [验收标准](ACCEPTANCE.md)：release readiness 的质量、版本和文档门禁。
 - [供应链](docs/supply-chain.md)：可校验 release Evidence、源码摘要、contract 指纹、依赖清单和 CI artifact。
 - [发布](docs/release.md)：`release-check`、manifest 字段和 Evidence 规则。
 

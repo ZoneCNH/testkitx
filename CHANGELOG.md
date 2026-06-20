@@ -2,6 +2,8 @@
 
 ## 未发布
 
+- 同步 `FEATURES.md` 和 `ACCEPTANCE.md`，补齐 release readiness 的功能清单与验收标准入口。
+
 ## v0.4.0 - 2026-06-05
 
 ### 新增
