@@ -1,6 +1,7 @@
 package fake
 
 import (
+	"context"
 	"testing"
 	"time"
 )
@@ -153,25 +154,25 @@ func TestFakeLogger_Concurrent(t *testing.T) {
 
 func TestFakeMeter_AssertCounterValue(t *testing.T) {
 	m := FakeMeter()
-	m.IncCounter("requests", nil)
-	m.IncCounter("requests", nil)
-	m.IncCounter("requests", nil)
+	m.IncCounter("requests", map[string]string{})
+	m.IncCounter("requests", map[string]string{})
+	m.IncCounter("requests", map[string]string{})
 
 	m.AssertCounterValue(t, "requests", 3)
 }
 
 func TestFakeMeter_AssertHistogramRecorded(t *testing.T) {
 	m := FakeMeter()
-	m.ObserveHistogram("latency", 0.5, nil)
-	m.ObserveHistogram("latency", 0.3, nil)
+	m.ObserveHistogram("latency", 0.5, map[string]string{})
+	m.ObserveHistogram("latency", 0.3, map[string]string{})
 
 	m.AssertHistogramRecorded(t, "latency")
 }
 
 func TestFakeMeter_CounterValue(t *testing.T) {
 	m := FakeMeter()
-	m.IncCounter("errors", nil)
-	m.IncCounter("errors", nil)
+	m.IncCounter("errors", map[string]string{})
+	m.IncCounter("errors", map[string]string{})
 
 	if got := m.CounterValue("errors"); got != 2 {
 		t.Errorf("CounterValue = %v, want 2", got)
@@ -184,7 +185,7 @@ func TestFakeMeter_CounterValue(t *testing.T) {
 func TestFakeMeter_Reset(t *testing.T) {
 	m := FakeMeter()
 	m.IncCounter("x", nil)
-	m.SetGauge("y", 1, nil)
+	m.SetGauge("y", 1, map[string]string{})
 	m.Reset()
 
 	if got := m.CounterValue("x"); got != 0 {
@@ -199,8 +200,8 @@ func TestFakeMeter_Reset(t *testing.T) {
 
 func TestFakeTracer_StartSpan(t *testing.T) {
 	tr := FakeTracer()
-	_, s1 := tr.StartSpan(nil, "operation-1")
-	_, s2 := tr.StartSpan(nil, "operation-2")
+	_, s1 := tr.StartSpan(context.Background(), "operation-1")
+	_, s2 := tr.StartSpan(context.Background(), "operation-2")
 
 	if s1.Name != "operation-1" {
 		t.Errorf("span 1 name = %q", s1.Name)
@@ -221,28 +222,28 @@ func TestFakeTracer_StartSpan(t *testing.T) {
 
 func TestFakeTracer_AssertSpanCount(t *testing.T) {
 	tr := FakeTracer()
-	tr.StartSpan(nil, "a")
-	tr.StartSpan(nil, "b")
-	tr.StartSpan(nil, "c")
+	tr.StartSpan(context.Background(), "a")
+	tr.StartSpan(context.Background(), "b")
+	tr.StartSpan(context.Background(), "c")
 
 	tr.AssertSpanCount(t, 3)
 }
 
 func TestFakeTracer_AssertTraceID(t *testing.T) {
 	tr := FakeTracer()
-	tr.StartSpan(nil, "x")
+	tr.StartSpan(context.Background(), "x")
 	tr.AssertTraceID(t) // should pass — trace ID was propagated
 }
 
 func TestFakeTracer_AssertSpanNamed(t *testing.T) {
 	tr := FakeTracer()
-	tr.StartSpan(nil, "checkout")
+	tr.StartSpan(context.Background(), "checkout")
 	tr.AssertSpanNamed(t, "checkout")
 }
 
 func TestFakeTracer_Reset(t *testing.T) {
 	tr := FakeTracer()
-	tr.StartSpan(nil, "a")
+	tr.StartSpan(context.Background(), "a")
 	tr.Reset()
 	tr.AssertSpanCount(t, 0)
 }
@@ -263,12 +264,12 @@ func TestFakeClock_Advance(t *testing.T) {
 	c := Clock(base)
 
 	c.Advance(1 * time.Hour)
-	if got := c.Now(); !got.Equal(base.Add(1*time.Hour)) {
+	if got := c.Now(); !got.Equal(base.Add(1 * time.Hour)) {
 		t.Errorf("after Advance(1h): %v, want %v", got, base.Add(1*time.Hour))
 	}
 
 	c.Advance(30 * time.Minute)
-	if got := c.Now(); !got.Equal(base.Add(90*time.Minute)) {
+	if got := c.Now(); !got.Equal(base.Add(90 * time.Minute)) {
 		t.Errorf("after Advance(30m): got %v, want %v", got, base.Add(90*time.Minute))
 	}
 }
@@ -368,9 +369,8 @@ func TestFakeBreaker_SetState(t *testing.T) {
 // ===== Compile-time interface checks =====
 
 func TestFakeImplementsContracts(t *testing.T) {
-	// These exist purely as compile-time assertions.
-	// Running this test ensures the build compiles them.
-	var _ Reader = FakeConfig(nil)
+	// These calls keep the concrete fakes exercised by the test build.
+	_ = FakeConfig(nil)
 	var _ Logger = FakeLogger()
 	var _ Meter = FakeMeter()
 	var _ Tracer = FakeTracer()

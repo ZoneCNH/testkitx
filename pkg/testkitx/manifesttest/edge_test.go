@@ -11,7 +11,9 @@ import (
 func TestWriteMkdirAllError(t *testing.T) {
 	t.Parallel()
 	blocker := filepath.Join(t.TempDir(), "blocker")
-	os.WriteFile(blocker, []byte("x"), 0o644)
+	if err := os.WriteFile(blocker, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	path := filepath.Join(blocker, "sub", "manifest.json")
 	manifest := manifesttest.New("mod", "abc123")
 	err := manifesttest.Write(path, manifest)
@@ -24,9 +26,13 @@ func TestVerifyChecksumReferenceMismatch(t *testing.T) {
 	t.Parallel()
 	manifest := manifesttest.New("mod", "abc123")
 	path := filepath.Join(t.TempDir(), "manifest.json")
-	manifesttest.Write(path, manifest)
+	if err := manifesttest.Write(path, manifest); err != nil {
+		t.Fatal(err)
+	}
 	checksumPath := manifesttest.ChecksumPath(path)
-	os.WriteFile(checksumPath, []byte("abc123  wrong_name.json\n"), 0o644)
+	if err := os.WriteFile(checksumPath, []byte("abc123  wrong_name.json\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	err := manifesttest.VerifyChecksum(path, checksumPath)
 	if err == nil {
 		t.Fatal("expected error for reference mismatch")
@@ -37,7 +43,9 @@ func TestVerifyChecksumNonExistentChecksum(t *testing.T) {
 	t.Parallel()
 	manifest := manifesttest.New("mod", "abc123")
 	path := filepath.Join(t.TempDir(), "manifest.json")
-	manifesttest.Write(path, manifest)
+	if err := manifesttest.Write(path, manifest); err != nil {
+		t.Fatal(err)
+	}
 	err := manifesttest.VerifyChecksum(path, "/nonexistent/checksum.sha256")
 	if err == nil {
 		t.Fatal("expected error for nonexistent checksum file")

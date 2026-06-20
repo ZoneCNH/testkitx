@@ -75,6 +75,3 @@ func TestHashDirDetectsContentChange(t *testing.T) {
 		t.Fatal("HashDir should detect content change")
 	}
 }
-
-
-

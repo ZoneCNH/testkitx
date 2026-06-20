@@ -142,7 +142,9 @@ func TestVerifyManifestRejectsNonexistentFile(t *testing.T) {
 func TestVerifyManifestRejectsInvalidJSON(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "bad.json")
-	os.WriteFile(path, []byte("not json"), 0o644)
+	if err := os.WriteFile(path, []byte("not json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	err := verifyManifest(path, false, false, "")
 	if err == nil {
 		t.Fatal("expected error for invalid JSON")

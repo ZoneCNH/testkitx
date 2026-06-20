@@ -238,7 +238,9 @@ func TestWriteFileEncoderError(t *testing.T) {
 	path := filepath.Join(dir, "evidence.json")
 	run := validRun()
 	// Create the file so MkdirAll is not needed.
-	os.WriteFile(path, []byte{}, 0o644)
+	if err := os.WriteFile(path, []byte{}, 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	// WriteFile creates a new file with os.Create, so we can't easily make
 	// the encoder fail after Create succeeds. Instead test the

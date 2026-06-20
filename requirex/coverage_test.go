@@ -14,7 +14,6 @@ type mockTB struct {
 func (m *mockTB) Helper()                           {}
 func (m *mockTB) Fatalf(format string, args ...any) { m.failed = true }
 
-
 func TestEqualMismatch(t *testing.T) {
 	h := &mockTB{}
 	Equal(h, "want", "got")
@@ -73,7 +72,7 @@ func TestErrorKindOneOfEmptyWants(t *testing.T) {
 
 func TestEventuallyNilPredicate(t *testing.T) {
 	h := &panicMockTB{}
-	defer func() { recover() }()
+	defer func() { _ = recover() }()
 	Eventually(h, time.Second, time.Millisecond, nil)
 	if !h.failed {
 		t.Fatal("expected failure on nil predicate")
@@ -90,7 +89,7 @@ func (m *panicMockTB) Fatalf(format string, args ...any) { m.failed = true; pani
 
 func TestEventuallyZeroTimeout(t *testing.T) {
 	h := &panicMockTB{}
-	defer func() { recover() }()
+	defer func() { _ = recover() }()
 	Eventually(h, 0, time.Millisecond, func() bool { return true })
 	if !h.failed {
 		t.Fatal("expected failure on zero timeout")
@@ -99,7 +98,7 @@ func TestEventuallyZeroTimeout(t *testing.T) {
 
 func TestEventuallyNegativeTimeout(t *testing.T) {
 	h := &panicMockTB{}
-	defer func() { recover() }()
+	defer func() { _ = recover() }()
 	Eventually(h, -time.Second, time.Millisecond, func() bool { return true })
 	if !h.failed {
 		t.Fatal("expected failure on negative timeout")
@@ -108,7 +107,7 @@ func TestEventuallyNegativeTimeout(t *testing.T) {
 
 func TestEventuallyTimeoutExceeded(t *testing.T) {
 	h := &panicMockTB{}
-	defer func() { recover() }()
+	defer func() { _ = recover() }()
 	Eventually(h, 10*time.Millisecond, time.Millisecond, func() bool { return false })
 	if !h.failed {
 		t.Fatal("expected failure on timeout exceeded")

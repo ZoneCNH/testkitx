@@ -88,7 +88,7 @@ func TestRunExecQueryNilRows(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer func() { recover() }()
+		defer func() { _ = recover() }()
 		RunExecQuery(probe, nilRowsDB{})
 	}()
 	wg.Wait()
@@ -104,7 +104,7 @@ func TestRunPoolNegativeStats(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer func() { recover() }()
+		defer func() { _ = recover() }()
 		RunPool(probe, negStatsPool{})
 	}()
 	wg.Wait()
@@ -187,7 +187,7 @@ func TestRunTransactionNilTx(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer func() { recover() }()
+		defer func() { _ = recover() }()
 		RunTransaction(probe, nilTxDB{})
 	}()
 	wg.Wait()

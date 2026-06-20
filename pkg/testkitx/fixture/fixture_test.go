@@ -77,4 +77,3 @@ func TestNewWorkspaceWithModulePath(t *testing.T) {
 		t.Fatalf("unexpected go.mod: %s", goMod)
 	}
 }
-

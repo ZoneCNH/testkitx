@@ -245,7 +245,6 @@ func TestErrorMessageEmptyWithCause(t *testing.T) {
 	}
 }
 
-
 func TestErrorMessageEmptyWithCauseDirect(t *testing.T) {
 	t.Parallel()
 	// Construct Error directly to bypass newError which copies cause to message.

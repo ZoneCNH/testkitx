@@ -320,7 +320,9 @@ func TestVerifyEvidenceRejectsNonexistentFile(t *testing.T) {
 func TestVerifyEvidenceRejectsInvalidJSON(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "bad.json")
-	os.WriteFile(path, []byte("not json"), 0o644)
+	if err := os.WriteFile(path, []byte("not json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	err := verifyEvidence(path)
 	if err == nil {
 		t.Fatal("expected error for invalid JSON")

@@ -39,8 +39,12 @@ func TestAssertBytesMatch(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "golden.golden")
 	content := []byte("expected")
-	os.MkdirAll(filepath.Dir(path), 0o755)
-	os.WriteFile(path, content, 0o644)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, content, 0o644); err != nil {
+		t.Fatal(err)
+	}
 	evidence := golden.AssertBytes(t, path, content)
 	if !evidence.Matched {
 		t.Fatal("expected Matched=true")
@@ -62,7 +66,9 @@ func TestAssertBytesUpdateWriteError(t *testing.T) {
 	t.Setenv(golden.UpdateEnv, "1") //nolint:usetesting // cannot combine Setenv with Parallel
 	// Create a directory at the target path so WriteFile fails.
 	dir := filepath.Join(t.TempDir(), "golden.golden")
-	os.MkdirAll(dir, 0o755)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
 	golden.AssertBytes(m, dir, []byte("data"))
 	if !m.failed {
 		t.Fatal("expected failure on WriteFile error")
@@ -78,18 +84,18 @@ func TestAssertJSONSuccessUpdate(t *testing.T) {
 	}
 }
 
-
 func TestUpdateMkdirAllDirectError(t *testing.T) {
 	t.Setenv(golden.UpdateEnv, "1")
 	blocker := filepath.Join(t.TempDir(), "blocker")
-	os.WriteFile(blocker, []byte("x"), 0o644)
+	if err := os.WriteFile(blocker, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	m := &mockTB{}
 	golden.AssertBytes(m, filepath.Join(blocker, "sub", "file.golden"), []byte("data"))
 	if !m.failed {
 		t.Fatal("expected failure on MkdirAll error")
 	}
 }
-
 
 func TestWriteGoldenMkdirAllError(t *testing.T) {
 	t.Setenv(golden.UpdateEnv, "1")
@@ -103,7 +109,9 @@ func TestWriteGoldenWriteFileError(t *testing.T) {
 	t.Setenv(golden.UpdateEnv, "1")
 	// Create a directory at the target path so WriteFile fails (can't write to a directory).
 	dir := filepath.Join(t.TempDir(), "file.golden")
-	os.MkdirAll(dir, 0o755)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
 	err := golden.WriteGolden(dir, []byte("data"))
 	if err == nil {
 		t.Fatal("expected WriteFile error")
@@ -130,7 +138,9 @@ func TestCheckBytesMkdirAllError(t *testing.T) {
 func TestCheckBytesWriteFileError(t *testing.T) {
 	t.Setenv(golden.UpdateEnv, "1")
 	dir := filepath.Join(t.TempDir(), "file.golden")
-	os.MkdirAll(dir, 0o755)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
 	_, err := golden.CheckBytes(dir, []byte("data"))
 	if err == nil {
 		t.Fatal("expected WriteFile error")

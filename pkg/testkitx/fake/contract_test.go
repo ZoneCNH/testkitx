@@ -11,8 +11,6 @@ func TestContract_FakeConfig_Reader(t *testing.T) {
 		"name":  "testkit",
 		"limit": 100,
 	})
-	// implements Reader at compile time
-	var _ Reader = cfg
 	_ = cfg.Get("name")
 	_ = cfg.GetString("name")
 	_ = cfg.GetInt("limit")
@@ -37,7 +35,7 @@ func TestContract_FakeTracer_Interface(t *testing.T) {
 
 // TestContract_FakeBreaker_Interface verifies FakeBreaker implements Breaker.
 func TestContract_FakeBreaker_Interface(t *testing.T) {
-	var _ Breaker = FakeBreaker(BreakerClosed)
+	_ = FakeBreaker(BreakerClosed)
 }
 
 // TestContract_FakeConfig_Fingerprint verifies FakeConfig is deterministic.

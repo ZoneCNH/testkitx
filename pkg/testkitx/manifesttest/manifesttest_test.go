@@ -96,7 +96,9 @@ func TestVerifyChecksumEmptyFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	checksumPath := manifesttest.ChecksumPath(path)
-	os.WriteFile(checksumPath, []byte(""), 0o644)
+	if err := os.WriteFile(checksumPath, []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	err := manifesttest.VerifyChecksum(path, checksumPath)
 	if err == nil || !strings.Contains(err.Error(), "empty checksum file") {
 		t.Fatalf("expected empty checksum error, got %v", err)
@@ -111,7 +113,9 @@ func TestVerifyChecksumInvalidHex(t *testing.T) {
 		t.Fatal(err)
 	}
 	checksumPath := manifesttest.ChecksumPath(path)
-	os.WriteFile(checksumPath, []byte(strings.Repeat("z", 64)+"\n"), 0o644)
+	if err := os.WriteFile(checksumPath, []byte(strings.Repeat("z", 64)+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	err := manifesttest.VerifyChecksum(path, checksumPath)
 	if err == nil || !strings.Contains(err.Error(), "invalid sha256") {
 		t.Fatalf("expected invalid sha256 error, got %v", err)

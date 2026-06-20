@@ -21,7 +21,7 @@ func TestRunObjectStoreNilBody(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer func() { recover() }()
+		defer func() { _ = recover() }()
 		RunObjectStore(probe, nilBodyStore{})
 	}()
 	wg.Wait()

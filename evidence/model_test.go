@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-
 func TestMarshalValidReport(t *testing.T) {
 	t.Parallel()
 	report := NewReport("marshal-test", Passed("check1"))
@@ -41,7 +40,6 @@ func TestAggregateStatusAllPassed(t *testing.T) {
 		t.Fatalf("all passed: expected pass, got %q", got)
 	}
 }
-
 
 func TestAggregateStatusMixedSkipAndPass(t *testing.T) {
 	t.Parallel()
