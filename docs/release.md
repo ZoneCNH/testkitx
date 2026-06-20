@@ -32,7 +32,7 @@ GOWORK=off make release-final-check
 打 tag 前推荐使用 release preflight：
 
 ```bash
-make release-preflight VERSION=v0.1.0
+make release-preflight VERSION=v0.4.0
 ```
 
 `release-preflight` 会先检查版本号、当前分支、工作区洁净状态、`main` 与 `origin/main` 是否一致、目标 tag 是否已存在、`CHANGELOG.md` 是否包含目标版本，以及 `golangci-lint` / `govulncheck` 是否已安装；随后以 `GOWORK=off` 运行 `release-final-check`。tag 应在该入口通过后再创建和推送。

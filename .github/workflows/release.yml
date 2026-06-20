@@ -23,7 +23,7 @@ jobs:
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Release Check
-        run: GOWORK=off make release-check
+        run: GOWORK=off make release-final-check
 
       - name: Upload Manifest
         uses: actions/upload-artifact@v4
