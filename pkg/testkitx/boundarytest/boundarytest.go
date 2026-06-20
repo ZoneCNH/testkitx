@@ -66,10 +66,14 @@ func Scan(cfg ScanConfig) ([]Violation, error) {
 			if allowed[p] {
 				continue
 			}
-			pos := fset.Position(imp.Pos())
+			fileInfo := fset.File(imp.Pos())
+			line := 0
+			if fileInfo != nil {
+				line = fileInfo.Line(imp.Pos())
+			}
 			out = append(out, Violation{
 				File:       path,
-				Line:       pos.Line,
+				Line:       line,
 				ImportPath: p,
 				Reason:     "production code imports testkitx internal package",
 			})
