@@ -3,6 +3,7 @@
 ## 未发布
 
 - 同步 `FEATURES.md` 和 `ACCEPTANCE.md`，补齐 release readiness 的功能清单与验收标准入口。
+- 对齐 CI / Release 工作流的 `govulncheck` 版本，并统一 Go 1.23 工具链默认值到 `go.mod`。
 
 ## v0.4.0 - 2026-06-05
 

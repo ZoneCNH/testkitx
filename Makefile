@@ -1,6 +1,6 @@
 DOCKER_IMAGE ?= $(notdir $(CURDIR))-toolchain:local
 DOCKER_GATE ?= ./scripts/docker/docker_gate.sh
-GO_VERSION ?= 1.24
+GO_VERSION ?= 1.23
 GOLANGCI_LINT_VERSION ?= v2.1.6
 GOVULNCHECK_VERSION ?= v1.1.4
 
