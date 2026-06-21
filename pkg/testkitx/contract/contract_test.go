@@ -127,4 +127,3 @@ func TestEvidenceValidateRejectsNonHexSHA(t *testing.T) {
 		t.Fatalf("expected non-hex sha error, got %v", err)
 	}
 }
-

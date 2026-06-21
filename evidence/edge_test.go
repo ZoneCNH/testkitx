@@ -64,4 +64,3 @@ func TestValidateReportRejectsInvalidCheckStatus(t *testing.T) {
 		t.Fatal("expected error for invalid check status")
 	}
 }
-

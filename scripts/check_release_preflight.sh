@@ -56,6 +56,32 @@ if ! grep -Eq "^## \\[?$version\\]?( |$)" CHANGELOG.md; then
   exit 1
 fi
 
+release_pkg_version="$(sed -n 's/^ *Version[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' pkg/testkitx/version.go | head -n1)"
+if [[ -z "$release_pkg_version" ]]; then
+  echo "ERROR: could not read pkg/testkitx/version.go version"
+  exit 1
+fi
+
+if [[ "$release_pkg_version" != "$version" ]]; then
+  echo "ERROR: pkg/testkitx/version.go version ($release_pkg_version) does not match VERSION ($version)"
+  exit 1
+fi
+
+if ! grep -Eq "^  table_version: ${version}$" .repo-contract.yaml; then
+  echo "ERROR: .repo-contract.yaml table_version must match VERSION ($version)"
+  exit 1
+fi
+
+if ! grep -Eq "^  latest_git_tag: ${version}$" .repo-contract.yaml; then
+  echo "ERROR: .repo-contract.yaml latest_git_tag must match VERSION ($version)"
+  exit 1
+fi
+
+if ! grep -Eq "\"version\": \"${version}\"" release/manifest/template.json; then
+  echo "ERROR: release/manifest/template.json version must match VERSION ($version)"
+  exit 1
+fi
+
 for tool in golangci-lint govulncheck; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "ERROR: $tool not installed"

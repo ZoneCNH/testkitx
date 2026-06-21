@@ -21,10 +21,10 @@ type Tracer interface {
 // FakeTracerImpl is a deterministic fake tracer that records spans and
 // supports post-hoc assertions. It implements Tracer.
 type FakeTracerImpl struct {
-	mu       sync.Mutex
-	spans    []Span
-	nextID   int
-	traceID  string
+	mu      sync.Mutex
+	spans   []Span
+	nextID  int
+	traceID string
 }
 
 // Compile-time contract: *FakeTracerImpl implements Tracer.

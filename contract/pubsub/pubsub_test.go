@@ -31,7 +31,7 @@ func TestRunPublishSubscribeNilSub(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer func() { recover() }()
+		defer func() { _ = recover() }()
 		RunPublishSubscribe(probe, bus, nilSubBus{})
 	}()
 	wg.Wait()
@@ -47,7 +47,7 @@ func TestRunRequestReplyEmptyValue(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer func() { recover() }()
+		defer func() { _ = recover() }()
 		RunRequestReply(probe, emptyReplyBus{})
 	}()
 	wg.Wait()

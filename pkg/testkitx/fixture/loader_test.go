@@ -33,7 +33,9 @@ func TestWriteMkdirAllError(t *testing.T) {
 	ws := fixture.NewWorkspace(t, "test.mod")
 	// Create a file where a directory is expected, so MkdirAll fails.
 	blocker := filepath.Join(ws.ModuleDir, "blocker")
-	os.WriteFile(blocker, []byte("x"), 0o644)
+	if err := os.WriteFile(blocker, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	_, err := ws.Write("blocker/file.txt", []byte("data"))
 	if err == nil {
 		t.Fatal("expected error when MkdirAll fails")
@@ -45,7 +47,9 @@ func TestWriteFileError(t *testing.T) {
 	ws := fixture.NewWorkspace(t, "test.mod")
 	// Create a directory at the target path so WriteFile fails (can't write to a directory).
 	target := filepath.Join(ws.ModuleDir, "data.json")
-	os.MkdirAll(target, 0o755)
+	if err := os.MkdirAll(target, 0o755); err != nil {
+		t.Fatal(err)
+	}
 	_, err := ws.Write("data.json", []byte("payload"))
 	if err == nil {
 		t.Fatal("expected error when WriteFile target is a directory")
@@ -60,7 +64,6 @@ func TestNewWorkspaceMkdirAllError(t *testing.T) {
 		t.Fatal("expected NewWorkspace to fail with impossible TempDir")
 	}
 }
-
 
 func TestLoadESuccess(t *testing.T) {
 	t.Parallel()
@@ -103,6 +106,31 @@ func TestLoadJSONEInvalidJSON(t *testing.T) {
 	err := fixture.LoadJSONE("nonexistent.json", &v)
 	if err == nil {
 		t.Fatal("expected error for missing fixture")
+	}
+}
+
+func TestLoadE_CleansRelativePath(t *testing.T) {
+	t.Parallel()
+	data, err := fixture.LoadE(filepath.Join("..", "fixtures", "sample.json"))
+	if err != nil {
+		t.Fatalf("LoadE relative path: %v", err)
+	}
+	if len(data) == 0 {
+		t.Fatal("expected non-empty data")
+	}
+}
+
+func TestLoadJSONE_CleansRelativePath(t *testing.T) {
+	t.Parallel()
+	var v struct {
+		Name  string `json:"name"`
+		Value int    `json:"value"`
+	}
+	if err := fixture.LoadJSONE(filepath.Join("..", "fixtures", "sample.json"), &v); err != nil {
+		t.Fatalf("LoadJSONE relative path: %v", err)
+	}
+	if v.Name != "test" || v.Value != 42 {
+		t.Fatalf("unexpected value: %+v", v)
 	}
 }
 

@@ -275,7 +275,6 @@ func TestHealthCheckNilReceiverClient(t *testing.T) {
 	}
 }
 
-
 func TestHealthCheckNilReceiverNilContext(t *testing.T) {
 	t.Parallel()
 	var client *Client
@@ -331,8 +330,6 @@ func TestHealthCheckDeadlineBelowTimeout(t *testing.T) {
 		t.Fatalf("expected unhealthy with expired deadline, got %s", status.Status)
 	}
 }
-
-
 
 func TestHealthCheckDeadlineExceededWithTimeoutAndErr(t *testing.T) {
 	t.Parallel()

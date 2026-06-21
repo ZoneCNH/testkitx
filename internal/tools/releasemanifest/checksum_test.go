@@ -137,7 +137,9 @@ replace example.com/dep => ./dep
 func TestReadManifestChecksumRejectsEmptyFile(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "empty.json.sha256")
-	os.WriteFile(path, []byte(""), 0o644)
+	if err := os.WriteFile(path, []byte(""), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	_, err := readManifestChecksum(path, "empty.json")
 	if err == nil {
 		t.Fatal("expected error for empty checksum file")
@@ -147,7 +149,9 @@ func TestReadManifestChecksumRejectsEmptyFile(t *testing.T) {
 func TestReadManifestChecksumRejectsShortDigest(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "short.json.sha256")
-	os.WriteFile(path, []byte("abcd1234  short.json\n"), 0o644)
+	if err := os.WriteFile(path, []byte("abcd1234  short.json\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	_, err := readManifestChecksum(path, "short.json")
 	if err == nil {
 		t.Fatal("expected error for short digest")
@@ -158,7 +162,9 @@ func TestReadManifestChecksumRejectsInvalidHex(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "bad.json.sha256")
 	badHex := strings.Repeat("z0", 32)
-	os.WriteFile(path, []byte(badHex+"  bad.json\n"), 0o644)
+	if err := os.WriteFile(path, []byte(badHex+"  bad.json\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	_, err := readManifestChecksum(path, "bad.json")
 	if err == nil {
 		t.Fatal("expected error for invalid hex")
@@ -169,7 +175,9 @@ func TestReadManifestChecksumRejectsWrongFilename(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "manifest.json.sha256")
 	validHex := strings.Repeat("ab", 32)
-	os.WriteFile(path, []byte(validHex+"  wrong.json\n"), 0o644)
+	if err := os.WriteFile(path, []byte(validHex+"  wrong.json\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	_, err := readManifestChecksum(path, "manifest.json")
 	if err == nil {
 		t.Fatal("expected error for wrong filename")
@@ -180,7 +188,9 @@ func TestReadManifestChecksumAcceptsSHA256Prefix(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "prefixed.json.sha256")
 	validHex := strings.Repeat("ab", 32)
-	os.WriteFile(path, []byte("sha256:"+validHex+"  prefixed.json\n"), 0o644)
+	if err := os.WriteFile(path, []byte("sha256:"+validHex+"  prefixed.json\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	got, err := readManifestChecksum(path, "prefixed.json")
 	if err != nil {
 		t.Fatal(err)

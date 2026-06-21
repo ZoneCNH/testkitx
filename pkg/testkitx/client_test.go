@@ -187,7 +187,6 @@ func TestRecordErrorMetricWithRealError(t *testing.T) {
 	}
 }
 
-
 func TestCloseNilReceiver(t *testing.T) {
 	t.Parallel()
 	var client *Client

@@ -21,7 +21,9 @@ func TestWriteOrFatalCallsFatal(t *testing.T) {
 	ws := fixture.NewWorkspace(t, "testmod")
 	m := &mockTB{}
 	blocker := filepath.Join(ws.ModuleDir, "block")
-	os.WriteFile(blocker, []byte("x"), 0o644)
+	if err := os.WriteFile(blocker, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	ws.WriteOrFatal(m, "block/deep/file.txt", []byte("data"))
 	if !m.failed {
 		t.Fatal("expected WriteOrFatal to fail on MkdirAll error")

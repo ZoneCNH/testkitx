@@ -11,7 +11,7 @@ shift
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 image="${DOCKER_IMAGE:-$(basename "$repo_root")-toolchain:local}"
-go_version="${GO_VERSION:-1.24}"
+go_version="${GO_VERSION:-1.23}"
 golangci_lint_version="${GOLANGCI_LINT_VERSION:-v2.1.6}"
 govulncheck_version="${GOVULNCHECK_VERSION:-v1.1.4}"
 

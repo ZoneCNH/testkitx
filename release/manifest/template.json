@@ -1,6 +1,6 @@
 {
   "module": "github.com/ZoneCNH/testkitx",
-  "version": "v0.1.0",
+  "version": "v0.4.1",
   "commit": "{{COMMIT}}",
   "tree_sha": "{{TREE_SHA}}",
   "source_digest": "{{SOURCE_DIGEST}}",

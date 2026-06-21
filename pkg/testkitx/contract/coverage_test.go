@@ -17,29 +17,29 @@ type mockTB struct {
 	failed bool
 }
 
-func (m *mockTB) Helper()                              {}
-func (m *mockTB) Fatalf(format string, args ...any)    { m.failed = true }
-func (m *mockTB) Errorf(format string, args ...any)    { m.failed = true }
-func (m *mockTB) FailNow()                             { m.failed = true }
-func (m *mockTB) Failed() bool                         { return m.failed }
-func (m *mockTB) Name() string                         { return "mock" }
-func (m *mockTB) Log(args ...any)                      {}
-func (m *mockTB) Logf(format string, args ...any)      {}
-func (m *mockTB) Skip(args ...any)                     {}
-func (m *mockTB) Skipf(format string, args ...any)     {}
-func (m *mockTB) SkipNow()                             {}
-func (m *mockTB) Skipped() bool                        { return false }
-func (m *mockTB) TempDir() string                      { return os.TempDir() }
-func (m *mockTB) Setenv(key, value string)             {}
-func (m *mockTB) Cleanup(func())                       {}
-func (m *mockTB) Error(args ...any)                    { m.failed = true }
-func (m *mockTB) Fatal(args ...any)                    { m.failed = true }
-func (m *mockTB) Fail()                                { m.failed = true }
-func (m *mockTB) ArtifactDir() string                  { return os.TempDir() }
-func (m *mockTB) Attr(key, value string)               {}
-func (m *mockTB) Chdir(dir string)                     {}
-func (m *mockTB) Context() context.Context             { return context.Background() }
-func (m *mockTB) Output() io.Writer                    { return io.Discard }
+func (m *mockTB) Helper()                           {}
+func (m *mockTB) Fatalf(format string, args ...any) { m.failed = true }
+func (m *mockTB) Errorf(format string, args ...any) { m.failed = true }
+func (m *mockTB) FailNow()                          { m.failed = true }
+func (m *mockTB) Failed() bool                      { return m.failed }
+func (m *mockTB) Name() string                      { return "mock" }
+func (m *mockTB) Log(args ...any)                   {}
+func (m *mockTB) Logf(format string, args ...any)   {}
+func (m *mockTB) Skip(args ...any)                  {}
+func (m *mockTB) Skipf(format string, args ...any)  {}
+func (m *mockTB) SkipNow()                          {}
+func (m *mockTB) Skipped() bool                     { return false }
+func (m *mockTB) TempDir() string                   { return os.TempDir() }
+func (m *mockTB) Setenv(key, value string)          {}
+func (m *mockTB) Cleanup(func())                    {}
+func (m *mockTB) Error(args ...any)                 { m.failed = true }
+func (m *mockTB) Fatal(args ...any)                 { m.failed = true }
+func (m *mockTB) Fail()                             { m.failed = true }
+func (m *mockTB) ArtifactDir() string               { return os.TempDir() }
+func (m *mockTB) Attr(key, value string)            {}
+func (m *mockTB) Chdir(dir string)                  {}
+func (m *mockTB) Context() context.Context          { return context.Background() }
+func (m *mockTB) Output() io.Writer                 { return io.Discard }
 
 func TestEvidenceValidateRejectsEmptyKind(t *testing.T) {
 	t.Parallel()
@@ -108,7 +108,9 @@ func TestWriteEvidenceRejectsInvalidEvidence(t *testing.T) {
 func TestAssertHashRejectsEmptyContractID(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "file.txt")
-	os.WriteFile(path, []byte("data"), 0o644)
+	if err := os.WriteFile(path, []byte("data"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	hash, _ := contract.FileSHA256(path)
 	m := &mockTB{}
 	contract.AssertHash(m, "", path, hash, nil)
@@ -120,7 +122,9 @@ func TestAssertHashRejectsEmptyContractID(t *testing.T) {
 func TestAssertHashMismatch(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "file.txt")
-	os.WriteFile(path, []byte("data"), 0o644)
+	if err := os.WriteFile(path, []byte("data"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	m := &mockTB{}
 	contract.AssertHash(m, "id", path, strings.Repeat("0", 64), nil)
 	if !m.failed {
@@ -147,7 +151,9 @@ func TestHashDirNonExistent(t *testing.T) {
 func TestCopyMetadataNil(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "c.json")
-	os.WriteFile(path, []byte(`{}`), 0o644)
+	if err := os.WriteFile(path, []byte(`{}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	hash, _ := contract.FileSHA256(path)
 	evidence := contract.AssertHash(t, "id", path, hash, nil)
 	if evidence.Metadata != nil {
@@ -158,7 +164,9 @@ func TestCopyMetadataNil(t *testing.T) {
 func TestCopyMetadataNonNil(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "c.json")
-	os.WriteFile(path, []byte(`{}`), 0o644)
+	if err := os.WriteFile(path, []byte(`{}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	hash, _ := contract.FileSHA256(path)
 	evidence := contract.AssertHash(t, "id", path, hash, map[string]string{"k": "v"})
 	if evidence.Metadata["k"] != "v" {
@@ -189,7 +197,6 @@ func TestWriteEvidenceWhitespacePath(t *testing.T) {
 		t.Fatalf("expected path required error, got %v", err)
 	}
 }
-
 
 func TestWriteEvidenceHappyPath(t *testing.T) {
 	t.Parallel()
@@ -234,7 +241,9 @@ func TestHashDirReadFileError(t *testing.T) {
 	dir := t.TempDir()
 	// Create a file, then make it unreadable.
 	path := filepath.Join(dir, "unreadable.txt")
-	os.WriteFile(path, []byte("data"), 0o000)
+	if err := os.WriteFile(path, []byte("data"), 0o000); err != nil {
+		t.Fatal(err)
+	}
 	_, err := contract.HashDir(dir)
 	// On some systems running as root, this won't fail. Skip if so.
 	if err == nil {

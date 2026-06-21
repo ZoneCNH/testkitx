@@ -35,4 +35,3 @@ func TestCheckLeakRegistersCleanup(t *testing.T) {
 	// This test verifies CheckLeak doesn't panic and the cleanup runs.
 	leaktest.CheckLeak(t)
 }
-
