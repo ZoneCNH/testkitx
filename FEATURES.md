@@ -2,7 +2,7 @@
 
 `testkitx` 是 `github.com/ZoneCNH/testkitx` 的 L1 测试专用能力库。当前发布版本以 `pkg/testkitx/version.go`、`.repo-contract.yaml` 和 `CHANGELOG.md` 为准，彼此应保持同一版本号。
 
-- 当前版本：`v0.4.0`
+- 当前版本：`v0.4.1`
 
 ## 当前特性
 

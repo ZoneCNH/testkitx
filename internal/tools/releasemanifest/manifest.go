@@ -97,7 +97,7 @@ func buildManifest() (Manifest, error) {
 
 	return Manifest{
 		Module:           module,
-		Version:          envDefault("VERSION", "v0.4.0"),
+		Version:          envDefault("VERSION", "v0.4.1"),
 		Commit:           runTrimmedDefault("unknown", "git", "rev-parse", "HEAD"),
 		TreeSHA:          runTrimmedDefault("unknown", "git", "rev-parse", "HEAD^{tree}"),
 		SourceDigest:     sourceDigest,

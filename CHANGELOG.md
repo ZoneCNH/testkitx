@@ -1,9 +1,12 @@
 # 变更日志
 
-## 未发布
+## v0.4.1 - 2026-06-21
+
+### 改进
 
 - 同步 `FEATURES.md` 和 `ACCEPTANCE.md`，补齐 release readiness 的功能清单与验收标准入口。
 - 对齐 CI / Release 工作流的 `govulncheck` 版本，并统一 Go 1.23 工具链默认值到 `go.mod`。
+- 修复 `scripts/render_template.sh` 渲染临时下游模板时夹带本地 `.omc/` 和 `*.out` 生成状态的问题，避免 release Evidence 被本地痕迹污染。
 
 ## v0.4.0 - 2026-06-05
 

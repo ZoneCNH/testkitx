@@ -109,6 +109,31 @@ func TestLoadJSONEInvalidJSON(t *testing.T) {
 	}
 }
 
+func TestLoadE_CleansRelativePath(t *testing.T) {
+	t.Parallel()
+	data, err := fixture.LoadE(filepath.Join("..", "fixtures", "sample.json"))
+	if err != nil {
+		t.Fatalf("LoadE relative path: %v", err)
+	}
+	if len(data) == 0 {
+		t.Fatal("expected non-empty data")
+	}
+}
+
+func TestLoadJSONE_CleansRelativePath(t *testing.T) {
+	t.Parallel()
+	var v struct {
+		Name  string `json:"name"`
+		Value int    `json:"value"`
+	}
+	if err := fixture.LoadJSONE(filepath.Join("..", "fixtures", "sample.json"), &v); err != nil {
+		t.Fatalf("LoadJSONE relative path: %v", err)
+	}
+	if v.Name != "test" || v.Value != 42 {
+		t.Fatalf("unexpected value: %+v", v)
+	}
+}
+
 func TestDirESuccess(t *testing.T) {
 	t.Parallel()
 	dir, err := fixture.DirE()
