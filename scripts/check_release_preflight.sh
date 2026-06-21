@@ -56,7 +56,7 @@ if ! grep -Eq "^## \\[?$version\\]?( |$)" CHANGELOG.md; then
   exit 1
 fi
 
-release_pkg_version="$(sed -n 's/^ *Version[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' pkg/testkitx/version.go | head -n1)"
+release_pkg_version="$(sed -n 's/^[[:space:]]*Version[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' pkg/testkitx/version.go | head -n1)"
 if [[ -z "$release_pkg_version" ]]; then
   echo "ERROR: could not read pkg/testkitx/version.go version"
   exit 1

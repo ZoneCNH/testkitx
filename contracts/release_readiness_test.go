@@ -52,6 +52,16 @@ func TestReleaseReadinessDocsAndMetadataStayAligned(t *testing.T) {
 	}
 }
 
+func TestReleasePreflightCanParseGofmtIndentedVersionConstant(t *testing.T) {
+	t.Parallel()
+
+	versionGo := readFile(t, "../pkg/testkitx/version.go")
+	version := mustFindVersion(t, versionGo, `(?m)^[[:space:]]*Version[[:space:]]*=[[:space:]]*"(v\d+\.\d+\.\d+)"`)
+	if version != testkitx.Version {
+		t.Fatalf("pkg/testkitx/version.go version = %q, want %q", version, testkitx.Version)
+	}
+}
+
 func readFile(t *testing.T, path string) string {
 	t.Helper()
 
