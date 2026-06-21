@@ -72,8 +72,10 @@ fi
   cd "$repo_root"
   tar \
     --exclude='./.git' \
+    --exclude='./.omc' \
     --exclude='./.omx' \
     --exclude='./.worktree' \
+    --exclude='./*.out' \
     --exclude='./coverage.out' \
     --exclude='./release/manifest/latest.json' \
     --exclude='./release/manifest/latest.json.sha256' \
